@@ -32,7 +32,8 @@ AAPlayer::AAPlayer()
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 	PrimaryActorTick.bCanEverTick = false;
 
-
+	MaxHp = 100;
+	CurrentHp = MaxHp;
 }
 
 void AAPlayer::Move(const FInputActionValue& Value)

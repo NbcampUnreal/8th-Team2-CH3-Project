@@ -64,8 +64,10 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
-private:
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 CurrentHp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 MaxHp;
 	
 public:
