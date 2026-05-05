@@ -3,7 +3,6 @@
 
 #include "Ch3_Team2WeaponComponent.h"
 #include "Ch3_Team2Character.h"
-#include "Ch3_Team2Projectile.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
@@ -28,6 +27,8 @@ void UCh3_Team2WeaponComponent::Fire()
 		return;
 	}
 
+	/*
+	 
 	// Try and fire a projectile
 	if (ProjectileClass != nullptr)
 	{
@@ -47,6 +48,7 @@ void UCh3_Team2WeaponComponent::Fire()
 			World->SpawnActor<ACh3_Team2Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
+	*/
 	
 	// Try and play the sound if specified
 	if (FireSound != nullptr)

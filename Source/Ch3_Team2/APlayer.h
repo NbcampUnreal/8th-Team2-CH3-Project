@@ -47,37 +47,30 @@ class CH3_TEAM2_API AAPlayer : public ACharacter
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
-	
-public:
-	// Sets default values for this character's properties
-	AAPlayer();
-
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 	// APawn interface
-	
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
-	
-	
-public:	
+public:
+	// 생성자
+	AAPlayer();
 	/** Returns Mesh1P subobject **/
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 private:
-	int32 i_CurrentHp;
-	int32 i_MaxHp;
+	int32 CurrentHp;
+	int32 MaxHp;
 	
 public:
 	// 받는 값
-	// 
-	void SetHp(int32 Set_Hp) { i_MaxHp = Set_Hp;}
+	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
 	// 현제 체력 회복
 	void AddCurrentHp(int32 Add_Hp) ;
 	// 최대 체력 증가
@@ -85,5 +78,5 @@ public:
 	
 	// return 값
 	// 체력 return 
-	const int32 GetHp() {return i_CurrentHp;}
+	const int32 GetHp() {return CurrentHp;}
 };

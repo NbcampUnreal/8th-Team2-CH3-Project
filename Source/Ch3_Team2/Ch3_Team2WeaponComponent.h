@@ -14,10 +14,6 @@ class CH3_TEAM2_API UCh3_Team2WeaponComponent : public USkeletalMeshComponent
 	GENERATED_BODY()
 
 public:
-	/** Projectile class to spawn */
-	// 총알 데이터
-	UPROPERTY(EditAnywhere, Category="Projectile")
-	TSubclassOf<class ACh3_Team2Projectile> ProjectileClass;
 
 	/** Sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)

@@ -4,7 +4,6 @@
 #include "AWeaponComponet.h"
 #include "APlayer.h"
 // 기본 불릿 나중에 발꿀것
-#include "Ch3_Team2Projectile.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
