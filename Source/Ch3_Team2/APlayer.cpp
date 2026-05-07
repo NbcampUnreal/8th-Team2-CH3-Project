@@ -6,10 +6,12 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/SphereComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AAPlayer::AAPlayer()
@@ -30,10 +32,32 @@ AAPlayer::AAPlayer()
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
+	
+	// Tick 함수 호출 false 거부 
 	PrimaryActorTick.bCanEverTick = false;
-
+	
+	
+	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
+	MagnetComp->SetupAttachment(RootComponent);
+	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
+	DropExpComp->SetupAttachment(MagnetComp);
+	
 	MaxHp = 100;
 	CurrentHp = MaxHp;
+	MoveSpeed = 600.0f;
+	JumpZVelocity = 420.0f;
+	SkillCooldown = 20.0f;
+	ActiveSkilltime = 5.0f;
+	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
+	MagnetRadius = 1000.0f;
+	Exp = 0;
+	LevelUpExp = 10;
+	Level = 1;
+	// 점프 높이 초기값 420
+	GetCharacterMovement()->JumpZVelocity = 420.0f;
+	
+	// 자석 범위 설정
+	MagnetComp->SetSphereRadius(MagnetRadius);
 }
 
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -41,14 +65,15 @@ void AAPlayer::Move(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
+	// 컨트롤로가 없으면 호출하지 않음.
 	if (Controller != nullptr)
 	{
 		// add movement 
-		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
-		AddMovementInput(GetActorRightVector(), MovementVector.X);
+		// 입력방향으로 이동
+		AddMovementInput(GetActorForwardVector(), MovementVector.Y * MoveSpeed);
+		AddMovementInput(GetActorRightVector(), MovementVector.X * MoveSpeed);
 	}
 }
-
 void AAPlayer::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -61,7 +86,6 @@ void AAPlayer::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -75,7 +99,6 @@ void AAPlayer::NotifyControllerChanged()
 		}
 	}
 }
-
 void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -84,7 +107,7 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
+		
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAPlayer::Move);
 
@@ -99,16 +122,52 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
+	// 체력회복시 회복된 량이 최대 체력보다 많으면 적으면
 	if (CurrentHp + Add_Hp <= MaxHp)
+		// 일단 체력추가
 		CurrentHp += Add_Hp;
 	else
+		//많으면 최대 체력 까지만 추가
 		CurrentHp = MaxHp;
 }
 
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
+	// 최대 체력 증가
 	MaxHp += Add_Max_Hp;
+	
+	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
+}
+
+void AAPlayer::AddExp(int32 Add_Exp)
+{
+	// 경험치 추가 
+	Exp += Add_Exp;
+	// Levelup경험치 초과시 
+	// 레벨업 + 경험치 초기화
+	// 만약  Lvelup 시 레벨업 경험치 증가시 따로 추가할 것
+	 if (Exp >= LevelUpExp)
+	 {
+	 	Exp -= LevelUpExp;
+	 	// 최대 레벨이 16이기 때문에 일단 작성
+	 	if (Level < 16)
+	 		LevelupStat();
+	 }
+}
+
+void AAPlayer::LevelupStat()
+{
+	// 최대 체력
+	MaxHp += 16;
+	// 레벨업
+	Level++;
+	// 점프 값 증가
+	JumpZVelocity += 8.0f;
+	// 이동속도 증가
+	MoveSpeed += 18.0f;
+	// 점프 높이는 즉시 증가 
+	GetCharacterMovement()->JumpZVelocity += 8.0f;
 }
 
 

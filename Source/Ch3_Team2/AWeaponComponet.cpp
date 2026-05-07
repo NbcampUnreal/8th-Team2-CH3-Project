@@ -20,7 +20,6 @@ UAWeaponComponet::UAWeaponComponet()
 	// 총알 발사 위치 좌표
 	// Default offset from the character location for projectiles to spawn
 	MuzzleOffset = FVector(100.0f, 0.0f, 10.0f);
-
 	
 	Range = 100.f;
 	RoF = 1.f;
@@ -39,7 +38,7 @@ bool UAWeaponComponet::AttachWeapon(AAPlayer* TargetCharacter)
 	{
 		return false;
 	}
-
+	
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
 	
@@ -65,16 +64,13 @@ void UAWeaponComponet::Fire()
 	{
 		return;
 	}
-	
 	CanFire = false;
-	
 	GetWorld()->GetTimerManager().SetTimer(TimerFireDelay, this, &UAWeaponComponet::HandleFireDelay, 1.f / RoF, false);
 }
 
 void UAWeaponComponet::HandleFireDelay()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
-
 	CanFire = true;
 }
 
