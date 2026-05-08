@@ -27,8 +27,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<ULevelFlowDataAsset> LoadedFlowData;
 
-	int32 CurrentLevelIndex = 0;
+	int32 CurrentLevelIndex = INDEX_NONE;
 
-	void OpenLevelByWorld(const TSoftObjectPtr<UWorld>& WorldRef);
 	void SyncCurrentLevelIndex();
 };

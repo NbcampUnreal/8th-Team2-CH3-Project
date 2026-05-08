@@ -12,5 +12,5 @@ class CH3_TEAM2_API ULevelFlowDataAsset : public UPrimaryDataAsset
 public:
 	// [0]은 메인 메뉴, [1]부터 게임 스테이지
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level Flow", meta = (AllowedClasses = "/Script/Engine.World"))
-	TArray<TSoftObjectPtr<UWorld>> LevelSequence;
+	TArray<TSoftObjectPtr<UWorld>> Levels;
 };
