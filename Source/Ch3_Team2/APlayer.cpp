@@ -33,6 +33,14 @@ AAPlayer::AAPlayer()
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 	
+	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
+	ChildActor->SetupAttachment(Mesh1P);
+	
+	ChildActor->AttachToComponent(
+	Mesh1P,
+	FAttachmentTransformRules::SnapToTargetIncludingScale,
+	TEXT("GripPoint"));
+	
 	// Tick 함수 호출 false 거부 
 	PrimaryActorTick.bCanEverTick = true;
 	
@@ -41,6 +49,7 @@ AAPlayer::AAPlayer()
 	MagnetComp->SetupAttachment(RootComponent);
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
+	
 	
 	// 체력 
 	MaxHp = 100;
@@ -98,11 +107,11 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 	GEngine->AddOnScreenDebugMessage(
 	-1,	3.0f,FColor::Yellow,
 	FString::Printf(TEXT("Skill Active: Cool %f"), CurrentSkillCoolTime));
+	
 	// 현제 스킬 쿨이 0.0f 이하면 호출 하도록
 	if (CurrentSkillCoolTime <= 0.0f)
 	{
 		// 스킬 시전
-		CurrentSkillCoolTime = SkillCoolTime;
 		
 		// 스킬 시전
 		SkillTimeSlow();		
@@ -112,7 +121,7 @@ void AAPlayer::SkillTimeSlow()
 {
 	// 전체적인 시간 느리게 하는 코드
 	// 다만 
-	CustomTimeDilation = 0.2f;
+	CustomTimeDilation = 0.01f;
 	this->CustomTimeDilation = 1.0f;
 	// Tick 함수 활성화 
 	SetActorTickEnabled(true);
@@ -133,6 +142,8 @@ void AAPlayer::SkillTimeNormal()
 	// 사용한 TimeHandle은 초기화 해줄것
 	GetWorldTimerManager().ClearTimer(SkillTimerHandle);
 	
+	//
+	CurrentSkillCoolTime = SkillCoolTime;
 	// 시간 정상화 
 	CustomTimeDilation = 1.0f;
 	this->CustomTimeDilation = 1.0f;
@@ -152,6 +163,10 @@ void AAPlayer::ActivateSkillCooldown(float DeltaTime)
 
 void AAPlayer::Tick(float DletaTime)
 {
+	GEngine->AddOnScreenDebugMessage(
+	-1,	3.0f,FColor::Yellow,
+	FString::Printf(TEXT("Skill Active: Cool %f"), CurrentSkillCoolTime));
+	
 	ActivateSkillCooldown(DletaTime);
 	Super::Tick(DletaTime);
 }
