@@ -3,3 +3,9 @@
 
 #include "GunPistol.h"
 
+void AGunPistol::BeginPlay()
+{
+	
+
+	Super::BeginPlay();
+}
