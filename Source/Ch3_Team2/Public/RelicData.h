@@ -25,6 +25,9 @@ public:
 	ERelicGrade Grade;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ERelicStatType RelicStat;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<URelicEffectBase> EffectClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

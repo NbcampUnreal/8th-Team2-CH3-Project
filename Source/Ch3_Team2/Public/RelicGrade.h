@@ -6,8 +6,19 @@
 UENUM(BlueprintType)
 enum class ERelicGrade : uint8
 {
-	Common UMETA(DisplayName = "Common"),
-	Rare UMETA(DisplayName = "Rare"),
-	Epic UMETA(DisplayName = "Epic"),
-	Legendary UMETA(DisplayName = "Legendary"),
+	Common,
+	Rare,
+	Epic,
+	Legendary,
+};
+
+UENUM(BlueprintType)
+enum class ERelicStatType : uint8
+{
+	MaxHP,
+	SkillColldown,
+	MoveSpeed,
+	AmmoDamage,
+	critical,
+	
 };

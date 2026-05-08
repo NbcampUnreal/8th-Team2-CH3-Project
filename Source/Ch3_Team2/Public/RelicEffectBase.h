@@ -12,6 +12,7 @@ class CH3_TEAM2_API URelicEffectBase : public UObject
 	
 public:
 	
-	virtual void ApplyEffect(AActor* Owner,int32 Value);
+	UFUNCTION()
+	virtual void ApplyEffect(UObject* WorldContextObject,const FRelicData& NewRelic);
 	
 };
