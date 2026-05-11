@@ -2,40 +2,43 @@
 
 
 #include "MonsterBase.h"
+#include "MonsterStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-// Sets default values
 AMonsterBase::AMonsterBase()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	StatComp = CreateDefaultSubobject<UMonsterStatComponent>(TEXT("StatComp"));
 }
+
+void AMonsterBase::BeginPlay()
+{
+	Super::BeginPlay();
+	if (StatComp)
+	{
+		StatComp->OnDeath.AddUniqueDynamic(this,&AMonsterBase::HandleDeath);
+	}
+}
+
 FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 {
-	//몬스터 델리게이트 전달
 	return OnMonsterDeath;
 }
 
-float AMonsterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+void AMonsterBase::HandleDeath(AController* InInstigator)
 {
-	float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
-	CurrentStats.CurrentHP = FMath::Clamp(CurrentStats.CurrentHP-ActualDamage, 0.f,CurrentStats.MaxHP);
-	if (CurrentStats.CurrentHP <= 0.f)
-	{
-		OnDeath();
-	}
-	return ActualDamage;
-}
-
-void AMonsterBase::OnDeath()
-{
+	//충돌 및 움직임 중단
+	SetActorEnableCollision(false);
+	GetCharacterMovement()->StopMovementImmediately();
+	
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
 
+
+
 void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 {
-	BaseStats=InStats;
+	StatComp->InitializeStats(InStats);
 }
 
 void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
@@ -47,7 +50,6 @@ void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
 	SetActorEnableCollision(true);
 	SetActorTickEnabled(true);
 	
-	CurrentStats=BaseStats;
 }
 
 void AMonsterBase::OnReturnToPool()
@@ -64,7 +66,6 @@ void AMonsterBase::AfterDeath()
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
 	{
-		//죽었다고 신호 뿌림
 		OnMonsterDeath.Broadcast(this);
 	}
 	else
@@ -72,4 +73,6 @@ void AMonsterBase::AfterDeath()
 		Destroy();
 	}
 }
+
+
 
