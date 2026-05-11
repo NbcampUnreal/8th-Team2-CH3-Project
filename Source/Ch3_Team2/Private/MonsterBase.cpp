@@ -33,9 +33,9 @@ void AMonsterBase::OnDeath()
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
 
-void AMonsterBase::InitializeStats()
+void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 {
-	
+	BaseStats=InStats;
 }
 
 void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)

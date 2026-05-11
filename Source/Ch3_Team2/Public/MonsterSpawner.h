@@ -30,6 +30,9 @@ struct FMonsterSpawnConfig : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 PreAllocateCount = 10;
 	
+	//몬스터 스텟
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FMonsterStats MonsterStats;
 };
 
 UCLASS()
@@ -39,12 +42,11 @@ class CH3_TEAM2_API AMonsterSpawner : public AActor
 	
 public:	
 	AMonsterSpawner();
-	virtual void Tick(float DeltaTime) override;
 	
 	//미리 몬스터 만들어놓음
 	void PreAllocateMonsters();
 	//몬스터 소환
-	AMonsterBase* SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass,const FTransform& Transform);
+	AMonsterBase* SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass,const FTransform& Transform,const FMonsterStats& InStats);
 	void RandomSpawnMonster();
 protected:
 	virtual void BeginPlay() override;

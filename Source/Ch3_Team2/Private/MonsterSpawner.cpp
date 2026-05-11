@@ -29,12 +29,6 @@ void AMonsterSpawner::BeginPlay()
 
 
 
-void AMonsterSpawner::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void AMonsterSpawner::PreAllocateMonsters()
 {
 	if (MonsterConfigs.IsEmpty()) return;
@@ -53,12 +47,13 @@ void AMonsterSpawner::PreAllocateMonsters()
 
 
 
-AMonsterBase* AMonsterSpawner::SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass, const FTransform& Transform)
+AMonsterBase* AMonsterSpawner::SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass, const FTransform& Transform, const FMonsterStats& InStats)
 {
 	AMonsterBase* Monster = Cast<AMonsterBase>(PoolComp->GetActorFromPool(MonsterClass,Transform));
 	
 	if (Monster)
 	{
+		Monster->SetMonsterStats(InStats);
 		return Monster;
 	}
 
@@ -78,5 +73,5 @@ void AMonsterSpawner::RandomSpawnMonster()
 	
 	FVector RandomLoc = GetActorLocation() + FVector(FMath::RandRange(-200.f, 200.f), FMath::RandRange(-200.f, 200.f), 0.0f);
 	FTransform Transform(FRotator::ZeroRotator,RandomLoc,FVector::OneVector);
-	SpawnMonster(SelectedConfig->MonsterClass,Transform);
+	SpawnMonster(SelectedConfig->MonsterClass,Transform,SelectedConfig->MonsterStats);
 }

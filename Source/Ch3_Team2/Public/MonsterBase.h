@@ -22,14 +22,15 @@ public:
 	FOnReadyToReturn OnMonsterDeath;
 	virtual FOnReadyToReturn& GetOnReadyToReturn() override;
 	
+	//스텟 초기화
+    	void SetMonsterStats(const FMonsterStats& InStats);
 protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Stats")
 	FMonsterStats BaseStats;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Stats")
 	FMonsterStats CurrentStats;
-	//스텟 초기화
-	virtual void InitializeStats();
-	
+
+
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	
 	FTimerHandle DeathTimerHandle;
