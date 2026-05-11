@@ -2,7 +2,7 @@
 
 
 #include "MonsterBase.h"
-
+#include "GameFramework/CharacterMovementComponent.h"
 // Sets default values
 AMonsterBase::AMonsterBase()
 {
@@ -10,12 +10,10 @@ AMonsterBase::AMonsterBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 }
-
-// Called when the game starts or when spawned
-void AMonsterBase::BeginPlay()
+FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 {
-	Super::BeginPlay();
-	
+	//몬스터 델리게이트 전달
+	return OnMonsterDeath;
 }
 
 float AMonsterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -31,15 +29,47 @@ float AMonsterBase::TakeDamage(float Damage, struct FDamageEvent const& DamageEv
 
 void AMonsterBase::OnDeath()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Monster Death"));
+	//2초뒤 풀로 돌아감
+	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
 
-// Called every frame
-void AMonsterBase::Tick(float DeltaTime)
+void AMonsterBase::InitializeStats()
 {
-	Super::Tick(DeltaTime);
-
+	
 }
 
+void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
+{
+	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
+	GetCharacterMovement()->StopMovementImmediately();
+	
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	SetActorTickEnabled(true);
+	
+	CurrentStats=BaseStats;
+}
 
+void AMonsterBase::OnReturnToPool()
+{
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+	
+	GetCharacterMovement()->StopMovementImmediately();
+}
+
+void AMonsterBase::AfterDeath()
+{
+	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+	if (OnMonsterDeath.IsBound())
+	{
+		//죽었다고 신호 뿌림
+		OnMonsterDeath.Broadcast(this);
+	}
+	else
+	{
+		Destroy();
+	}
+}
 
