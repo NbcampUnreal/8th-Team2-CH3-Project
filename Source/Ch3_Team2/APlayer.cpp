@@ -2,6 +2,9 @@
 
 
 #include "APlayer.h"
+
+#include "SkillBaseComp.h"
+
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,6 +13,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "SkillBaseComp.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -36,19 +40,17 @@ AAPlayer::AAPlayer()
 	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
 	ChildActor->SetupAttachment(Mesh1P);
 	
-	ChildActor->AttachToComponent(
-	Mesh1P,
-	FAttachmentTransformRules::SnapToTargetIncludingScale,
-	TEXT("GripPoint"));
-	
 	// Tick 함수 호출 false 거부 
 	PrimaryActorTick.bCanEverTick = true;
-	
+	PrimaryActorTick.bStartWithTickEnabled = false; // 
 	
 	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
 	MagnetComp->SetupAttachment(RootComponent);
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
+	
+	// -- 스킬 Component 장착
+	
 	
 	
 	// 체력 
@@ -73,6 +75,25 @@ AAPlayer::AAPlayer()
 	
 	// 자석 범위 설정
 	MagnetComp->SetSphereRadius(MagnetRadius);
+}
+
+void AAPlayer::PlayerInit()
+{
+	ChildActor->AttachToComponent(
+	Mesh1P,
+	FAttachmentTransformRules::SnapToTargetIncludingScale,
+	TEXT("GripPoint"));
+}
+
+void AAPlayer::BeginPlay()
+{
+	PlayerInit();
+	// NewObject<타입>(Outer, Class)
+	SkillInstance = NewObject<UObject>(this, SkillComp);
+
+	// 만약 인터페이스나 특정 클래스로 형변환해서 쓰고 싶다면:
+	// USkillBase* Skill = Cast<USkillBase>(SkillInstance);
+	Super::BeginPlay();
 }
 
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -101,76 +122,27 @@ void AAPlayer::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(
-	-1,	3.0f,FColor::Yellow,
-	FString::Printf(TEXT("Skill Active: Cool %f"), CurrentSkillCoolTime));
 	
-	// 현제 스킬 쿨이 0.0f 이하면 호출 하도록
-	if (CurrentSkillCoolTime <= 0.0f)
+	
+	if (SkillInstance)
 	{
-		// 스킬 시전
+		// Component 
+		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
+		Skill->RegisterComponent();
+		GEngine->AddOnScreenDebugMessage(
+	-1,	3.0f,FColor::Yellow,
+	FString::Printf(TEXT("Skill Active: Cool %s"), Skill));
 		
-		// 스킬 시전
-		SkillTimeSlow();		
+		if (Skill)
+			Skill->ActiveCheck();
 	}
 }
-void AAPlayer::SkillTimeSlow()
-{
-	// 전체적인 시간 느리게 하는 코드
-	// 다만 
-	CustomTimeDilation = 0.01f;
-	this->CustomTimeDilation = 1.0f;
-	// Tick 함수 활성화 
-	SetActorTickEnabled(true);
-
-	GetWorldTimerManager().SetTimer(
-			SkillTimerHandle
-			,this
-			,&AAPlayer::SkillTimeNormal
-			,ActiveSkilltime
-			,false// 반복해서 함수를 호출해라
-			);
-	// 비 활성화 하는 TimeHandle 
-	CurrentSkillCoolTime = SkillCoolTime;
-}
-
-void AAPlayer::SkillTimeNormal()
-{
-	// 사용한 TimeHandle은 초기화 해줄것
-	GetWorldTimerManager().ClearTimer(SkillTimerHandle);
-	
-	//
-	CurrentSkillCoolTime = SkillCoolTime;
-	// 시간 정상화 
-	CustomTimeDilation = 1.0f;
-	this->CustomTimeDilation = 1.0f;
-}
-
-void AAPlayer::ActivateSkillCooldown(float DeltaTime)
-{
-	
-	// 쿨타임이 0초 아래로 떨어지지 않았으면 쿨타임 계속해서 감소 
-	if (CurrentSkillCoolTime > 0.0f)
-		CurrentSkillCoolTime -= DeltaTime;
-	else
-		// 만약에 스킬  쿨 타임이 다 찼다면 Tick 함수 비활성화
-		SetActorTickEnabled(false);
-		
-}
-
 void AAPlayer::Tick(float DletaTime)
 {
-	GEngine->AddOnScreenDebugMessage(
-	-1,	3.0f,FColor::Yellow,
-	FString::Printf(TEXT("Skill Active: Cool %f"), CurrentSkillCoolTime));
-	
-	ActivateSkillCooldown(DletaTime);
 	Super::Tick(DletaTime);
 }
-
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -208,9 +180,6 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		//UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
-
-
-
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
 	// 체력회복시 회복된 량이 최대 체력보다 많으면 적으면
@@ -221,7 +190,6 @@ void AAPlayer::AddCurrentHp(int32 Add_Hp)
 		//많으면 최대 체력 까지만 추가
 		CurrentHp = MaxHp;
 }
-
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
 	// 최대 체력 증가
@@ -230,7 +198,6 @@ void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
 }
-
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	// 경험치 추가 
@@ -248,7 +215,6 @@ void AAPlayer::AddExp(int32 Add_Exp)
 	 	}
 	 }
 }
-
 void AAPlayer::LevelupStat()
 {
 	// 최대 체력
