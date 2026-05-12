@@ -21,15 +21,13 @@ public:
 	
 	//데미지 처리
 	UFUNCTION()
-	void DamageTake(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InInstigater, AActor* Causer);
+	void TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InInstigater, AActor* Causer);
 	
 	
 	float GetAttackRange() const;
 	float GetAttackRate() const;
 	bool IsDead() const;
 public:	
-	UPROPERTY(BlueprintAssignable)
-	FOnHpChangedDelegate OnHpChanged;
 	UPROPERTY(BlueprintAssignable)
 	FOnDeathDelegate OnDeath;
 
