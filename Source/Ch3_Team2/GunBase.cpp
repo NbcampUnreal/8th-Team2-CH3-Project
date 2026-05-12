@@ -2,6 +2,7 @@
 
 
 #include "GunBase.h"
+#include "public/MonsterBase.h"
 
 bool AGunBase::CheckAmmo_Implementation()
 {
@@ -75,6 +76,10 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 	{
 		// 배틀 시스템 호출 샬라샬라
 		AActor* HitActor = HitResult.GetActor();
+		if (HitActor->ActorHasTag("Monster"))
+		{
+			AMonsterBase* Monster = Cast<AMonsterBase>(HitActor);
+		}
 		UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
 	}
 }

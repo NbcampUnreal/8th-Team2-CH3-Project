@@ -68,6 +68,7 @@ void USkillBaseComp::ActiveCheck()
 	}
 }
 
+
 void USkillBaseComp::SkillActive()
 {
 	SetComponentTickEnabled(true);
