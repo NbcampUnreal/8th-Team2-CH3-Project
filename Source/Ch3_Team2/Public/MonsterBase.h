@@ -5,23 +5,40 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "MonsterTypes.h"
+#include "Poolable.h"
 #include "MonsterBase.generated.h"
 
+
 UCLASS()
-class CH3_TEAM2_API AMonsterBase : public ACharacter
+class CH3_TEAM2_API AMonsterBase : public ACharacter,public IPoolable
 {
 	GENERATED_BODY()
-
-public:
-	AMonsterBase();
-	virtual void Tick(float DeltaTime) override;
-protected:
-	virtual void BeginPlay() override;
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	void OnDeath();
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Stats")
-	FMonsterStats BaseStats;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Stats")
-	FMonsterStats CurrentStats;
+public:	
+	AMonsterBase();
+	virtual void BeginPlay() override;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Spawn")
+	class AMonsterSpawner* MonsterSpawner;
+	UPROPERTY(BlueprintAssignable,Category="Events")
+	FOnReadyToReturn OnMonsterDeath;
+	virtual FOnReadyToReturn& GetOnReadyToReturn() override;
+	
+	//스텟 초기화
+	void SetMonsterStats(const FMonsterStats& InStats);
+	
+	//스텟 컴포넌트 읽기
+	FORCEINLINE class UMonsterStatComponent* GetStatComponent() const { return StatComp; }
+	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UMonsterStatComponent* StatComp;
+
+	FTimerHandle DeathTimerHandle;
+	UFUNCTION()
+	void HandleDeath(AController* InInstigator);
+	void AfterDeath();
+	
+	
+	virtual void OnSpawnFromPool(const FTransform& Transform) override;
+	virtual void OnReturnToPool() override;
 };
