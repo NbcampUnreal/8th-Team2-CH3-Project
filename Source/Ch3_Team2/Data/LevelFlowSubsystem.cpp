@@ -18,7 +18,7 @@ void ULevelFlowSubsystem::TravelToNextLevel()
 
     const int32 NextIndex = CurrentLevelIndex + 1;
 
-    if (LoadedFlowData->LevelSequence.IsValidIndex(NextIndex))
+    if (LoadedFlowData->Levels.IsValidIndex(NextIndex))
         TravelToLevelByIndex(NextIndex);
     else
         TravelToLevelByIndex(0);
@@ -27,20 +27,18 @@ void ULevelFlowSubsystem::TravelToNextLevel()
 void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
 {
     if (!LoadedFlowData) return;
-    if (!LoadedFlowData->LevelSequence.IsValidIndex(LevelIndex)) return;
+    if (!LoadedFlowData->Levels.IsValidIndex(LevelIndex)) return;
+
+    const TSoftObjectPtr<UWorld>& LevelRef = LoadedFlowData->Levels[LevelIndex];
+    if (LevelRef.IsNull()) return;
 
     CurrentLevelIndex = LevelIndex;
-    OpenLevelByWorld(LoadedFlowData->LevelSequence[LevelIndex]);
-}
 
-void ULevelFlowSubsystem::OpenLevelByWorld(const TSoftObjectPtr<UWorld>& WorldRef)
-{
-    if (WorldRef.IsNull()) return;
-
-    const FName LevelName = FName(*FPackageName::GetShortName(WorldRef.GetLongPackageName()));
+    const FName LevelName = FName(*FPackageName::GetShortName(LevelRef.GetLongPackageName()));
     UGameplayStatics::OpenLevel(this, LevelName);
 }
 
+// 아무 레벨에서 시작해도 대응이 될 수 있게 만들어둠
 void ULevelFlowSubsystem::SyncCurrentLevelIndex()
 {
     if (!LoadedFlowData) return;
@@ -51,9 +49,9 @@ void ULevelFlowSubsystem::SyncCurrentLevelIndex()
     FString CleanMapName = World->GetMapName();
     CleanMapName.RemoveFromStart(World->StreamingLevelsPrefix);
 
-    for (int32 i = 0; i < LoadedFlowData->LevelSequence.Num(); ++i)
+    for (int32 i = 0; i < LoadedFlowData->Levels.Num(); ++i)
     {
-        const auto& LevelRef = LoadedFlowData->LevelSequence[i];
+        const auto& LevelRef = LoadedFlowData->Levels[i];
         if (LevelRef.IsNull()) continue;
 
         if (FPackageName::GetShortName(LevelRef.GetLongPackageName()) == CleanMapName)

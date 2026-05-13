@@ -1,11 +1,4 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "GunPistol.h"
-
-void AGunPistol::BeginPlay()
-{
-	
-
-	Super::BeginPlay();
-}
+#include "RelicData.h"

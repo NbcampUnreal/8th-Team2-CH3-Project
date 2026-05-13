@@ -64,6 +64,9 @@ public:
 	
 	virtual void Tick(float DletaTime) override;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
+	UChildActorComponent* ChildActor;
+	
 //public:
 	// 생성자
 	AAPlayer();
@@ -111,6 +114,7 @@ public:
 	int32 Level;
 	
 public:
+	// ---- stat -----
 	// 받는 값
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
 	// 현제 체력 회복
@@ -135,7 +139,7 @@ public:
 	// 현제  스킬 쿨타임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
 	float CurrentSkillCoolTime;
-	
+	bool SkillActiveCheck; //스킬 사용여부 SkillInputKey 에 추가해서 중복 스킬 잠가버리기
 	//스킬 효과가 유지되는 지속 시간
 	const float ActiveSkilltime =5.0f;
 	
