@@ -43,5 +43,8 @@ public:
 	USphereComponent* SphereComponent;
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* StaticMeshComponent;
+	
+	UPROPERTY()
+	TObjectPtr<AAPlayer> TargetPlayer;
 
 };

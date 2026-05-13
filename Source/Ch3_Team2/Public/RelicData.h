@@ -16,7 +16,7 @@ struct FRelicData : public FTableRowBase
 	
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	FName RelicId;
+	int32 RelicId;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName RelicName;

@@ -13,8 +13,8 @@ AExp_ItemBase::AExp_ItemBase()
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 	//pawn민 오버랩 허용
-	SphereComponent->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
-	SphereComponent->OnComponentBeginOverlap.AddDynamic(this,&AExp_ItemBase::BeginOverlap);
+	SphereComponent->SetCollisionResponseToChannel(ECC_WorldDynamic,ECR_Overlap);
+	
 	
 	//Mesh는 보이는 용도
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
@@ -25,13 +25,18 @@ AExp_ItemBase::AExp_ItemBase()
 	
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	
+	MoveSpeed = 900.0f;
 
 }
 
 // Called when the game starts or when spawned
 void AExp_ItemBase::BeginPlay()
 {
+	
 	Super::BeginPlay();
+	
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this,&AExp_ItemBase::BeginOverlap);
 	
 }
 
@@ -40,7 +45,29 @@ void AExp_ItemBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	UE_LOG(LogTemp, Warning, TEXT("Beginning exp item base"));
+	
+	if (!TargetPlayer) return;
+	
+	
+	FVector Dir =
+		(TargetPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	
+	FVector NewLocation =
+		GetActorLocation() + Dir * MoveSpeed * DeltaTime;
+	
+	SetActorLocation(NewLocation);
+	
+	float Dist = FVector::Distance(
+		GetActorLocation(),
+		TargetPlayer->GetActorLocation());
+	
+	if (Dist < 40.0f)
+	{
+		
+		TargetPlayer->AddExp(ExpAmount);
+		SetActorTickEnabled(false);
+		Destroy();
+	}
 }
 
 void AExp_ItemBase::BeginOverlap(UPrimitiveComponent* OverlappedComp,
@@ -50,6 +77,13 @@ void AExp_ItemBase::BeginOverlap(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	SetActorTickEnabled(true);
+	AAPlayer* Player = Cast<AAPlayer>(OtherActor);
+	
+	if (Player)
+	{
+		TargetPlayer = Player;
+		
+		SetActorTickEnabled(true);
+	}
 }
 
