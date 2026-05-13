@@ -28,16 +28,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UArrowComponent> FirePoint;
 
-	// 블루프린트에서 사용하기 위해서 
-	UFUNCTION(BlueprintCallable) //BlueprintImplementableEvent
-	virtual void Fire();
-	
-public:
-	
-	//데미지양
+	//기본 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AmmoDamage;
+	float BaseDamage;
+	
+	// 성유물로 증가한 공격력
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RelicBonus;
 
+	// 최종 공격력 ( 계산 다된거 )  
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FinalDamage;
+	
+	// 전체 공격력 증가 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TotalBonus;
+	
 	// 크리티컬 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CritMultiplier;
@@ -70,15 +76,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ReloadTime;
 	
+	// 현제 장전 여부
+	bool ReloadingCheck;
+	// 장전 TimeHandle
+	UPROPERTY(BlueprintReadWrite)
+	FTimerHandle TimeReloadDelay;
+	
 	//연사속도 제어를 위한 핸들
 	UPROPERTY(BlueprintReadWrite)
 	FTimerHandle TimerFireDelay;
-	
-	UFUNCTION()
-	void HandleFireDelay();
-	
-	// 공격력 추가
-	void AddDmage(float Add_Damage){ AmmoDamage += Add_Damage;}
-	
-	//PartsLevel 부품은 일단 Keep
 };
