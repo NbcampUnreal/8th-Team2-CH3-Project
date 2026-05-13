@@ -51,34 +51,39 @@ class CH3_TEAM2_API AAPlayer : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SkillActive;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReloadAction;
+	
 public:
 	
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+	// 리로드
+	void Reload(const FInputActionValue& Value);
 	
 	// 스킬입력 키
 	void SkillInputKey(const FInputActionValue& Value);
 	// APawn interface
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-	
-	virtual void Tick(float DletaTime) override;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
 	UChildActorComponent* ChildActor;
 	
 //public:
 	// 생성자
 	AAPlayer();
-	// 플레이어 데이터 초기화
-	void PlayerInit();
+
 	virtual void BeginPlay() override;
 	/** Returns Mesh1P subobject **/
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+	
+	
+	// ---- stat -----
 	// 현제 체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 CurrentHp;
@@ -118,14 +123,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 Level;
 	
+	// 플레이어 데이터 초기화
+	void PlayerInit();
+	void StatInitialization();
 public:
-	// ---- stat -----
+	
 	// 받는 값
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
 	// 현제 체력 회복
 	void AddCurrentHp(int32 Add_Hp) ;
 	// 최대 체력 증가
 	void AddMaxHp(int32 Add_Max_Hp);
+	// 공격력 증가 성유물 획득 및 무기에 적용
+	void DropAddDamageRelic(float AddDamage);
 	
 	// return 값
 	// 체력 return 
@@ -143,30 +153,5 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	UObject* SkillInstance;
 	//UOBject를 사용하거나
-	// 캐릭터 안에서 Skill의 탬플릿
 	
-	//------- 스킬 라인 ------
-	// 액티브 스킬 사용후 재사용 대기 시간
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-	float SkillCoolTime;
-
-	// 현제  스킬 쿨타임
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-	float CurrentSkillCoolTime;
-	
-	//스킬 사용여부 SkillInputKey 에 추가해서 중복 스킬 잠가버리기
-	bool SkillActiveCheck; 
-	
-	//스킬 효과가 유지되는 지속 시간
-	const float ActiveSkilltime =5.0f;
-	
-	// 스킬 시전 지속시간 스킬handle
-	FTimerHandle SkillTimerHandle;
-	// 속도 감소 스킬 활성화
-	void SkillTimeSlow();
-	
-	//  감소된 속도 정상화 
-	void SkillTimeNormal();
-	
-	void ActivateSkillCooldown(float DeltaTime);
 };

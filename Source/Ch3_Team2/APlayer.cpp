@@ -12,6 +12,7 @@
 #include "Components/SphereComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GunBase.h"
 #include "InputActionValue.h"
 #include "SkillBaseComp.h"
 #include "Engine/LocalPlayer.h"
@@ -49,27 +50,7 @@ AAPlayer::AAPlayer()
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
 	
-	// -- 스킬 Component 장착
 	
-	
-	
-	// 체력 
-	MaxHp = 100;
-	CurrentHp = MaxHp;
-	// 속도 또는 좀프 관련
-	MoveSpeed = 600.0f;
-	JumpZVelocity = 420.0f;
-	// 스킬 관련
-	SkillCoolTime = 20.0f;
-	//
-	//ActiveSkilltime = 5.0f; - const화 해서 나중에 수정가능하게 할려면 const 제거 하고 할것
-	CurrentSkillCoolTime= 0;
-	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
-	MagnetRadius = 1000.0f;
-	// 경험치 및 레벨업 관련
-	Exp = 0;
-	LevelUpExp = 200;
-	Level = 1;
 	// 점프 높이 초기값 420
 	GetCharacterMovement()->JumpZVelocity = 420.0f;
 	
@@ -79,16 +60,40 @@ AAPlayer::AAPlayer()
 
 void AAPlayer::PlayerInit()
 {
+	
+	// -- 스킬 Component 장착
 	ChildActor->AttachToComponent(
 	Mesh1P,
 	FAttachmentTransformRules::SnapToTargetIncludingScale,
 	TEXT("GripPoint"));
 }
 
+void AAPlayer::StatInitialization()
+{
+	// 체력 
+	MaxHp = 100;
+	CurrentHp = MaxHp;
+	// 속도 또는 좀프 관련
+	MoveSpeed = 600.0f;
+	JumpZVelocity = 420.0f;
+	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
+	MagnetRadius = 1000.0f;
+	// 경험치 및 레벨업 관련
+	Exp = 0;
+	LevelUpExp = 200;
+	Level = 1;
+}
+
 void AAPlayer::BeginPlay()
 {
+	// 플레이어 모습 초기화
 	PlayerInit();
+	
+	// 스텟 초기화
+    StatInitialization();
+	
 	// NewObject<타입>(Outer, Class)
+	// Skil component Object화 
 	SkillInstance = NewObject<UObject>(this, SkillComp);
 
 	// 만약 인터페이스나 특정 클래스로 형변환해서 쓰고 싶다면:
@@ -122,10 +127,16 @@ void AAPlayer::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void AAPlayer::Reload(const FInputActionValue& Value)
+{
+	AGunBase* Gun = Cast<AGunBase>(ChildActor);
+	// 무기 리로드
+	Gun->Reload();
+}
+
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
-	
-	
 	if (SkillInstance)
 	{
 		// Component 
@@ -139,10 +150,7 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 			Skill->ActiveCheck();
 	}
 }
-void AAPlayer::Tick(float DletaTime)
-{
-	Super::Tick(DletaTime);
-}
+
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -174,6 +182,8 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		//Skill Activing
 		EnhancedInputComponent->BindAction(SkillActive, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
 		
+		//Reload Activing
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
 	}
 	else
 	{
@@ -198,6 +208,15 @@ void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
 }
+
+void AAPlayer::DropAddDamageRelic(float AddDamage)
+{
+	AGunBase* Gun = Cast<AGunBase>(ChildActor);
+	// 성유물 로 인한 공격력 증가 
+	Gun->AddRelicDamage(AddDamage);
+	
+}
+
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	// 경험치 추가 

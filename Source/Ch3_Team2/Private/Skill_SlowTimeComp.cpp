@@ -7,7 +7,7 @@
 
 void USkill_SlowTimeComp::ActiveCheck()
 {
-	
+	// 부모 클레스에서 이미 사용되고 있음.
 	Super::ActiveCheck();
 }
 
@@ -25,6 +25,7 @@ void USkill_SlowTimeComp::SkillActive()
 			,ActiveSkilltime *0.2f
 			,false
 			);
+	
 	Super::SkillActive();
 }
 
@@ -36,6 +37,7 @@ void USkill_SlowTimeComp::SkillEnd()
 	UE_LOG(LogTemp,Warning,TEXT("스킬종료"));
 	 */
 	// 스킬 종료 함수 호출
+	// 시간 정상화
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
 	AActor* Owner = GetOwner();
 	Owner->CustomTimeDilation = 1.0f;

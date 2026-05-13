@@ -25,25 +25,25 @@ void USkillBaseComp::BeginPlay()
 void USkillBaseComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	// Tick함수 정상적으로 호출 또는 비활성화 되는지 확인용
+	/*
 	GEngine->AddOnScreenDebugMessage(
 	-1,	3.0f,FColor::Yellow,
 	FString::Printf(TEXT("Skill Active: Cool %f"), CurrentSkillCoolTime));
+	 */
 	
 	// 스킬 쿨타임 확인용
 	SkillCoolDown(DeltaTime);
 	
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void USkillBaseComp::SkillDataReset()
 {
 	// 스킬 관련
 	SkillCoolTime = 20.0f;
-	//
 	//ActiveSkilltime = 5.0f; - const화 해서 나중에 수정가능하게 할려면 const 제거 하고 할것
 	CurrentSkillCoolTime= 0;
+	// 스킬 활성화 bool 값 true
 	SkillActiveCheck =true;
 }
 
@@ -55,21 +55,18 @@ void USkillBaseComp::ActiveCheck()
 	
 	// 변수를 포함해서 출력하고 싶을 때
 	FString SkillName = TEXT("시간 감소!");
-	float Cooldown = 5.5f;
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, 
-		FString::Printf(TEXT("스킬: %s, 남은 시간: %.1f"), *SkillName, Cooldown));
+		FString::Printf(TEXT("스킬: %s, 남은 시간: %.1f"), *SkillName, CurrentSkillCoolTime));
 	
 	if (CurrentSkillCoolTime <= 0.0f )
-	{
-		// 스킬 시전
-		
 		// 스킬 시전
 		SkillActive();		
-	}
 }
+
 
 void USkillBaseComp::SkillActive()
 {
+	// 스킬 Component tick 함수 활성화 
 	SetComponentTickEnabled(true);
 	
 	// 비 활성화 하는 TimeHandle 
@@ -78,6 +75,7 @@ void USkillBaseComp::SkillActive()
 
 void USkillBaseComp::SkillEnd()
 {
+	// 스킬 Time 헨들러 초기화
 	GetWorld()->GetTimerManager().ClearTimer(SkillTimerHandle);
 }
 
