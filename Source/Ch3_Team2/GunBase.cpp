@@ -32,7 +32,6 @@ void AGunBase::Reload_Implementation()
 			,ReloadTime
 			,false);
 }
-
 void AGunBase::Reload_End()
 {
 	
@@ -59,10 +58,10 @@ void AGunBase::Stats_Initialize()
 	EffectiveRange = 1000.f;
 	
 	// 공격력
-	RelicDamage = 0;
-	AmmoDamage = 100.f;
-	FinalDamage =RelicDamage + AmmoDamage;
-	TotalDamageUp = 0;
+	RelicBonus = 0;
+	BaseDamage = 100.f;
+	FinalDamage =RelicBonus + BaseDamage;
+	TotalBonus = 1.0f;
 	
 	// 연사 , 재장전 초기화
 	CanFire = true;
@@ -129,10 +128,13 @@ void AGunBase::HandleFireDelay()
 	CanFire = true;
 }
 
-void AGunBase::AddRelicDamage(float Add_Damage)
+void AGunBase::AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical)
 {
-	RelicDamage += Add_Damage;
-	FinalDamageCheck();
+	// 성유물 기본 공격력 증가
+	RelicBonus += Add_RelicDamage;
+	TotalBonus += Add_TotalDamage;
+	CritMultiplier += Critical;
+	FinalDamage = (BaseDamage * (1 + Bullet.Value )+ RelicBonus ) * TotalBonus;
 }
 void AGunBase::SelectParts(EPartsName parts)
 {
@@ -178,7 +180,7 @@ void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
 	Bullet.Level = 1;
-	Bullet.Value = 0;
+	Bullet.Value = 1.0f;
 	Bullet.Parts = EPartsName::eBullet;
 	
 	Magazine.Name = "Magazine";

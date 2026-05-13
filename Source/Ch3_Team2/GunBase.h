@@ -40,22 +40,15 @@ public:
 	// RPM ( 연사 속도 )시간 끝내는함수 
 	void HandleFireDelay();
 	// 공격력 추가
-	void AddRelicDamage(float Add_Damage);
-	// 전체 공격력 증가용 
-	void AddTotalDamage(float Damage) { TotalDamageUp += Damage;}
+	void AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical);
 	
 	// 최종 데미지 량
 	// 성유물 
-	float AttackAmmoDamage() { return FinalDamage +  FinalDamage* TotalDamageUp;}
-	
-	// 크리티컬 데미지
-	float AttackCriticalDamage() {return (FinalDamage +  FinalDamage* TotalDamageUp) *CritMultiplier;}
-	
+	float GetFinalDamage() { return FinalDamage;}
 	// 최종 데미지 최신화
-	void FinalDamageCheck (){FinalDamage = AmmoDamage + (AmmoDamage * Bullet.Value)+ RelicDamage;}
+	void FinalDamageCheck (){ }
 	// 파츠 선택
 	void SelectParts(EPartsName parts);
-	
 	// 무기 Parts
 	// 총알
 	FGunParts Bullet;

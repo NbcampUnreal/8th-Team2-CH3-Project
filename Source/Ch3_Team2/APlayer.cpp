@@ -54,8 +54,6 @@ AAPlayer::AAPlayer()
 	// 점프 높이 초기값 420
 	GetCharacterMovement()->JumpZVelocity = 420.0f;
 	
-	// 자석 범위 설정
-	MagnetComp->SetSphereRadius(MagnetRadius);
 }
 
 void AAPlayer::PlayerInit()
@@ -76,8 +74,12 @@ void AAPlayer::StatInitialization()
 	// 속도 또는 좀프 관련
 	MoveSpeed = 600.0f;
 	JumpZVelocity = 420.0f;
+	
 	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
 	MagnetRadius = 1000.0f;
+	// 자석 범위 설정
+	MagnetComp->SetSphereRadius(MagnetRadius);
+	
 	// 경험치 및 레벨업 관련
 	Exp = 0;
 	LevelUpExp = 200;
@@ -210,24 +212,15 @@ void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
 }
-
 void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
 	MoveSpeed += Add_Speed;
 }
-
-void AAPlayer::DropAddDamageRelic(float AddDamage)
+void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
 {
 	AGunBase* Gun = Cast<AGunBase>(ChildActor);
-	// 성유물 로 인한 공격력 증가 
-	Gun->AddRelicDamage(AddDamage);
-}
-
-void AAPlayer::TotalDamageUpGrade(float AddDamage)
-{
-	AGunBase* Gun = Cast<AGunBase>(ChildActor);
-	// 성유물 로 인한 공격력 증가 
-	Gun->AddTotalDamage(AddDamage);
+	// 성유물 로 인한 공격력 증가 , 크리티컬 도 포함
+	Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 }
 
 void AAPlayer::AddExp(int32 Add_Exp)
