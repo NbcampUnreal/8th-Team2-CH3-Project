@@ -34,6 +34,19 @@ void UMonsterStatComponent::TakeDamage(AActor* DamagedActor, float Damage, const
 		bIsDead= true;
 		OnDeath.Broadcast(InInstigater);
 	}
+	
+	// Test Log
+	if (GEngine)
+	{
+		FString Message = FString::Printf(TEXT("HP: %d / Damage: %f"), 
+		   Stats.CurrentHP, FinalDamage);
+            
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, Message);
+	}
+	UE_LOG(LogTemp, Log, TEXT("=== Monster REPORT ==="));
+	UE_LOG(LogTemp, Log, TEXT("Monster HP: %d"), Stats.CurrentHP);
+	UE_LOG(LogTemp, Log, TEXT("Final Damage: %f"), FinalDamage);
+	UE_LOG(LogTemp, Log, TEXT("====================="));
 }
 
 bool UMonsterStatComponent::IsDead() const
