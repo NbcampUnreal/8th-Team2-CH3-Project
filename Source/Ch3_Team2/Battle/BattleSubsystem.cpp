@@ -19,7 +19,6 @@ void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim
 	);
 
 	ProcessDeathAndKillCount(Victim);
-	BroadcastBattleResult();
 	
 	// Test Log
 	if (GEngine)
