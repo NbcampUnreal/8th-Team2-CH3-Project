@@ -5,16 +5,16 @@
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
 #include "Ch3_Team2/APlayer.h"
-#include "Exp_ItemBase.generated.h"
+#include "ExpItemBase.generated.h"
 
 UCLASS()
-class CH3_TEAM2_API AExp_ItemBase : public AActor
+class CH3_TEAM2_API AExpItemBase : public AActor
 {
 	GENERATED_BODY()
 	
 
 public:	
-	AExp_ItemBase();
+	AExpItemBase();
 	//경험치 양
 	UPROPERTY(BlueprintReadWrite, EditAnywhere,Category = "Exp")
 	int32 ExpAmount;
@@ -27,7 +27,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+	//오버랩
 	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
@@ -40,8 +40,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	UPROPERTY(EditAnywhere)
-	USphereComponent* SphereComponent;
+	TObjectPtr<USphereComponent> SphereComponent;
 	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* StaticMeshComponent;
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	
+	UPROPERTY()
+	TObjectPtr<AAPlayer> TargetPlayer;
 
 };
