@@ -54,13 +54,10 @@ AAPlayer::AAPlayer()
 	// 점프 높이 초기값 420
 	GetCharacterMovement()->JumpZVelocity = 420.0f;
 	
-	// 자석 범위 설정
-	MagnetComp->SetSphereRadius(MagnetRadius);
 }
 
 void AAPlayer::PlayerInit()
 {
-	
 	// -- 스킬 Component 장착
 	ChildActor->AttachToComponent(
 	Mesh1P,
@@ -76,8 +73,12 @@ void AAPlayer::StatInitialization()
 	// 속도 또는 좀프 관련
 	MoveSpeed = 600.0f;
 	JumpZVelocity = 420.0f;
+	
 	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
 	MagnetRadius = 1000.0f;
+	// 자석 범위 설정
+	MagnetComp->SetSphereRadius(MagnetRadius);
+	
 	// 경험치 및 레벨업 관련
 	Exp = 0;
 	LevelUpExp = 200;
@@ -134,14 +135,16 @@ void AAPlayer::Reload(const FInputActionValue& Value)
 	// 무기 리로드
 	Gun->Reload();
 }
-
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
 	if (SkillInstance)
 	{
 		// Component 
 		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		Skill->RegisterComponent();
+		// 등록 했는지 확인
+		if (!Skill->IsRegistered())
+			Skill->RegisterComponent();
+		// 호출 되는지 확인
 		GEngine->AddOnScreenDebugMessage(
 	-1,	3.0f,FColor::Yellow,
 	FString::Printf(TEXT("Skill Active: Cool %s"), Skill));
@@ -150,7 +153,6 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 			Skill->ActiveCheck();
 	}
 }
-
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -190,6 +192,7 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		//UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
+
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
 	// 체력회복시 회복된 량이 최대 체력보다 많으면 적으면
@@ -208,13 +211,18 @@ void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
 }
-
-void AAPlayer::DropAddDamageRelic(float AddDamage)
+void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
-	AGunBase* Gun = Cast<AGunBase>(ChildActor);
-	// 성유물 로 인한 공격력 증가 
-	Gun->AddRelicDamage(AddDamage);
-	
+	MoveSpeed += Add_Speed;
+}
+void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
+{
+	if (ChildActor)
+	{
+		AGunBase* Gun = Cast<AGunBase>(ChildActor);
+		// 성유물 로 인한 공격력 증가 , 크리티컬 도 포함
+		Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
+	}
 }
 
 void AAPlayer::AddExp(int32 Add_Exp)
@@ -248,6 +256,48 @@ void AAPlayer::LevelupStat()
 	GetCharacterMovement()->JumpZVelocity += 8.0f;
 }
 
+void AAPlayer::DegreaseSkiilCoolTiem(float SkillCoolTime)
+{
+	if (SkillInstance)
+	{
+		// Component 
+		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
+		Skill->SkiilDegreaseTime(SkillCoolTime);
+	}
+}
 
+float AAPlayer::TakeDamage(float DamageAmount
+	, struct FDamageEvent const& DamageEvent
+	,class AController* EventInstigator
+	,AActor* DamageCauser)
+{
+	CurrentHp -= FMath::RoundToInt32(DamageAmount);
+	CurrentHp = FMath::Clamp(CurrentHp, 0.f, MaxHp);
+	
+	UE_LOG(LogTemp, Warning,
+		TEXT("Player Hit! Damage: %f CurrentHP: %d"),
+		DamageAmount,
+		CurrentHp);
+	/*
+	 Super::TakeDamage(
+		DamageAmount //  데미지
+		,DamageEvent // 이벤트
+		,EventInstigator // Player를 공격한 actor ( 몬스터 ) controller 
+		,DamageCauser); // 때린 Actor 데이터 
+	 */
+	
+	if (CurrentHp <= 0.f)
+	{
+		OnDeath();
+	}
 
+	return DamageAmount;
+}
+
+void AAPlayer::OnDeath()
+{
+	// 사망 로그 호출
+	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
+	
+}
 

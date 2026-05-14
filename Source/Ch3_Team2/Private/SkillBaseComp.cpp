@@ -89,3 +89,14 @@ void USkillBaseComp::SkillCoolDown(float DeltaTime)
 			SetComponentTickEnabled(false);
 }
 
+void USkillBaseComp::SkiilDegreaseTime(float Degrease)
+{
+	if (SkillCoolTime - Degrease > 0.5f)
+	{
+		SkillCoolTime-=Degrease;
+		if (SkillCoolTime <= 0.5f)
+			SkillCoolTime = 0.5f;
+	}
+		
+}
+

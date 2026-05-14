@@ -28,14 +28,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UArrowComponent> FirePoint;
 
-	//기본 데미지양
+	//기본 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AmmoDamage;
+	float BaseDamage;
 	
 	// 성유물로 증가한 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RelicDamage;
+	float RelicBonus;
 
+	// 최종 공격력 ( 계산 다된거 )  
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FinalDamage;
+	
+	// 전체 공격력 증가 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TotalBonus;
+	
 	// 크리티컬 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CritMultiplier;

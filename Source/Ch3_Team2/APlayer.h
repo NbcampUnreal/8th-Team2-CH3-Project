@@ -134,12 +134,18 @@ public:
 	void AddCurrentHp(int32 Add_Hp) ;
 	// 최대 체력 증가
 	void AddMaxHp(int32 Add_Max_Hp);
+	
+	// 이동속도 증가 
+	void AddPlayerSpeed(float Add_Speed);
 	// 공격력 증가 성유물 획득 및 무기에 적용
-	void DropAddDamageRelic(float AddDamage);
+	void TotalDamageUpGrade(float AddRelicBonus, float TotalBonus ,float Critical);
+	
 	
 	// return 값
 	// 체력 return 
-	const int32 GetHp() {return CurrentHp;}
+	const int32 GetCurrentHp() {return CurrentHp;}
+	
+	const int32 GetMapHp(){return MaxHp;}
 	
 	// 경험치 추가 함수 
 	void AddExp(int32 Add_Exp);
@@ -150,8 +156,21 @@ public:
 	//USkillBaseComp* SkillComp;
 	TSubclassOf<USkillBaseComp> SkillComp;
 	
+	//UOBject를 사용하거나
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	UObject* SkillInstance;
-	//UOBject를 사용하거나
+	// 스킬 쿨타임 감소 호출함수 
+	void DegreaseSkiilCoolTiem(float SkillCoolTime);
+	
+	virtual float TakeDamage(
+		float DamageAmount
+		,struct FDamageEvent const& DamageEvent
+		,class AController* EventInstigator
+		,AActor* DamageCauser)
+	override;
+	
+	void OnDeath();
+	
+	
 	
 };

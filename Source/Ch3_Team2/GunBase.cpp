@@ -32,7 +32,6 @@ void AGunBase::Reload_Implementation()
 			,ReloadTime
 			,false);
 }
-
 void AGunBase::Reload_End()
 {
 	
@@ -41,20 +40,31 @@ void AGunBase::Reload_End()
 
 AGunBase::AGunBase()
 {
-	Stats_Initialize();
+	
 }
 
 void AGunBase::Stats_Initialize()
 {
+	// 탄창
 	MaxAmmo = 12;
 	CurrentAmmo = MaxAmmo;
+	// 연사속도 시간
 	RoundsPerSecond = 1.f;
-	CanFire = true;
+	// 사거리
 	EffectiveRange = 1000.f;
-	RelicDamage = 0;
-	AmmoDamage = 100.f;
+	
+	// 공격력
+	RelicBonus = 0;
+	BaseDamage = 100.f;
+	FinalDamage =RelicBonus + BaseDamage;
+	TotalBonus = 1.0f;
+	
+	// 연사 , 재장전 초기화
+	CanFire = true;
 	ReloadTime = 1.2;
 	ReloadingCheck= true;
+	
+	CritMultiplier = 2.0f;
 }
 
 void AGunBase::Fire_Gun(FVector Location, FVector Direction)
@@ -96,7 +106,12 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 		AActor* HitActor = HitResult.GetActor();
 		if (HitActor->ActorHasTag("Monster"))
 		{
+			// 몬스터 형변환
 			AMonsterBase* Monster = Cast<AMonsterBase>(HitActor);
+			// 일반공격
+			//AttackAmmoDamage();
+			//크리티컬 공격
+			//AttackCriticalDamage();
 		}
 		UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
 	}
@@ -109,33 +124,42 @@ void AGunBase::HandleFireDelay()
 	CanFire = true;
 }
 
-void AGunBase::SelectParts(FString Name)
+void AGunBase::AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical)
 {
-	/*
-	switch (Name)
+	// 성유물 기본 공격력 증가
+	RelicBonus += Add_RelicDamage;
+	TotalBonus += Add_TotalDamage;
+	CritMultiplier += Critical;
+	FinalDamage = (BaseDamage * (1 + Bullet.Value )+ RelicBonus ) * TotalBonus;
+}
+void AGunBase::SelectParts(EPartsName parts)
+{
+	switch (parts)
 	{
-		case "Bullet":
+	case EPartsName::eBullet:
 		if (Bullet.Level < 4)
 		{
 			Bullet.Value +=0.25;
 			Bullet.Level ++;
+			// 총 공격력 레벨업시 
+			FinalDamageCheck();
 		}
 		break;
-		case "Scope":
+	case EPartsName::eScope:
 		if (Scope.Level < 4)
 		{
 			Scope.Value +=0.20;
 			Scope.Level ++;
 		}
 		break;
-		case "Handle":
+	case  EPartsName::eHandle:
 		if (Handle.Level < 4)
 		{
 			Handle.Value +=0.20;
 			Handle.Level ++;
 		}
 		break;
-		case "Magazine":
+	case  EPartsName::eMagazine:
 		if (Magazine.Level < 4)
 		{
 			Magazine.Value +=0.15;
@@ -143,26 +167,43 @@ void AGunBase::SelectParts(FString Name)
 		}
 		break;
 	default:
+		break;
 	}
-	 */
-	
 }
+
 
 void AGunBase::InitializeParts()
 {
-	Bullet.PartsName = "Bullet";
+	Bullet.Name = "Bullet";
 	Bullet.Level = 1;
-	Bullet.Value = 0;
+	Bullet.Value = 1.0f;
+	Bullet.Parts = EPartsName::eBullet;
 	
-	Magazine.PartsName = "Magazine";
+	Magazine.Name = "Magazine";
 	Magazine.Level = 1;
 	Magazine.Value = 0;
+	Magazine.Parts = EPartsName::eMagazine;
+	
 
-	Scope.PartsName = "Scope";
+	Scope.Name = "Scope";
 	Scope.Level = 1;  
 	Scope.Value = 0;  
+	Scope.Parts = EPartsName::eScope;
 	
-	Handle.PartsName = "Handle";
+	Handle.Name = "Handle";
 	Handle.Level = 1;
 	Handle.Value = 0;
+	Handle.Parts = EPartsName::eHandle;
+	
 }
+
+void AGunBase::BeginPlay()
+{
+	// 파츠 초기화
+	InitializeParts();
+	
+	// 무기 스텟 초기화 
+	Stats_Initialize();
+	Super::BeginPlay();
+}
+

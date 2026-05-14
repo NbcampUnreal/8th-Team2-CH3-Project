@@ -37,8 +37,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
 	float CurrentSkillCoolTime;
 	
-	bool SkillActiveCheck; 
 	//스킬 사용여부 SkillInputKey 에 추가해서 중복 스킬 잠가버리기
+	bool SkillActiveCheck; 
+	
 	//스킬 효과가 유지되는 지속 시간
 	const float ActiveSkilltime =5.0f;
 	
@@ -54,8 +55,9 @@ public:
 	// 스킬 시간종료 
 	virtual void SkillEnd();
 	
+	// 스킬 쿨타임 시간 감소 
 	virtual void SkillCoolDown(float DeltaTime);
 	
-	// Sphere Trace 
-		
+	void SkiilDegreaseTime(float Degrease);
+	
 };
