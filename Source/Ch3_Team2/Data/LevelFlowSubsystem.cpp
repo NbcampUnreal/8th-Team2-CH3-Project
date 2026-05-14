@@ -24,6 +24,12 @@ void ULevelFlowSubsystem::TravelToNextLevel()
         TravelToLevelByIndex(0);
 }
 
+bool ULevelFlowSubsystem::IsLastLevel() const
+{
+    if (!LoadedFlowData) return false;
+    return CurrentLevelIndex == LoadedFlowData->Levels.Num() - 1;
+}
+
 void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
 {
     if (!LoadedFlowData) return;

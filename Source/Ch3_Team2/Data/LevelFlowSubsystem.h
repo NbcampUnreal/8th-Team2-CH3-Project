@@ -13,21 +13,27 @@ class CH3_TEAM2_API ULevelFlowSubsystem : public UGameInstanceSubsystem
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	
+	void TravelToLevelByIndex(int32 LevelIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Level Flow")
+	int32 GetCurrentLevelIndex() const { return CurrentLevelIndex; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Level Flow")
 	void TravelToNextLevel();
-
-	void TravelToLevelByIndex(int32 LevelIndex);
+	
+	UFUNCTION(BlueprintCallable, Category = "Level Flow")
+	bool IsLastLevel() const;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Config, Category = "Level Flow")
 	TSoftObjectPtr<ULevelFlowDataAsset> LevelFlowData;
 
 private:
-	UPROPERTY()
-	TObjectPtr<ULevelFlowDataAsset> LoadedFlowData;
-
 	int32 CurrentLevelIndex = INDEX_NONE;
 
 	void SyncCurrentLevelIndex();
+	
+	UPROPERTY()
+	TObjectPtr<ULevelFlowDataAsset> LoadedFlowData;
 };

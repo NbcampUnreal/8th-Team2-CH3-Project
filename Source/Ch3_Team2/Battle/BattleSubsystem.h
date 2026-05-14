@@ -24,7 +24,7 @@ struct FMonsterKillReport
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBattleSummarySignature, 
 	const TArray<FMonsterKillReport>&, KillReports, 
-	float, GlobalTotalDamage);
+	int32, GlobalTotalDamage);
 
 UCLASS()
 class CH3_TEAM2_API UBattleSubsystem : public UGameInstanceSubsystem
