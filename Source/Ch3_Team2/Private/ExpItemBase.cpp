@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Exp_ItemBase.h"
+#include "ExpItemBase.h"
 
 // Sets default values
-AExp_ItemBase::AExp_ItemBase()
+AExpItemBase::AExpItemBase()
 {
 	//SphereCollision은 플레이어 감지용
  	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
@@ -31,17 +31,17 @@ AExp_ItemBase::AExp_ItemBase()
 }
 
 // Called when the game starts or when spawned
-void AExp_ItemBase::BeginPlay()
+void AExpItemBase::BeginPlay()
 {
 	
 	Super::BeginPlay();
 	
-	SphereComponent->OnComponentBeginOverlap.AddDynamic(this,&AExp_ItemBase::BeginOverlap);
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this,&AExpItemBase::BeginOverlap);
 	
 }
 
 // Called every frame
-void AExp_ItemBase::Tick(float DeltaTime)
+void AExpItemBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
@@ -70,7 +70,7 @@ void AExp_ItemBase::Tick(float DeltaTime)
 	}
 }
 
-void AExp_ItemBase::BeginOverlap(UPrimitiveComponent* OverlappedComp,
+void AExpItemBase::BeginOverlap(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,

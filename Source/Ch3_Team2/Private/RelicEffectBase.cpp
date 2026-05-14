@@ -8,28 +8,29 @@
 void URelicEffectBase::ApplyEffect(UObject* WorldContextObject,const FRelicData& Relic)
 {
 	AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(WorldContextObject, 0));
-	AWeaponBase* Weapon = Cast<AWeaponBase>(UGameplayStatics::GetActorOfClass(GetWorld(),AWeaponBase::StaticClass()));
-	if (!Player || !Weapon)
+	if (!Player)
 	{
 		return;
 	}
 	
+	if (Relic.Value == 0) return;
 	switch (Relic.RelicStat)
 	{
 	case ERelicStatType::MaxHP:
 		Player->AddMaxHp(Relic.Value);
 		break;
 	case ERelicStatType::MoveSpeed:
-		Player->MoveSpeed += Relic.Value;
+		Player->AddPlayerSpeed(Relic.Value);
 		break;
 	case ERelicStatType::AmmoDamage:
-		Weapon->AmmoDamage += Relic.Value;
-		break;
-	case ERelicStatType::critical:
-		Weapon->CritMultiplier += Relic.Value;
+		Player->TotalDamageUpGrade(Relic.Value,0,0);
 		break;
 	case ERelicStatType::SkillColldown:
-		Player->SkillCoolTime -= Relic.Value;
+		Player->DegreaseSkiilCoolTiem(Relic.Value);
+		break;
+	case ERelicStatType::critical:
+		float CurrentValue = Relic.Value * 0.01;
+		Player->TotalDamageUpGrade(0,0,CurrentValue);
 		
 	}
 }

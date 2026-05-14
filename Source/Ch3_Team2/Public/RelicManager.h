@@ -4,15 +4,19 @@
 #include "RelicData.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "Relic_Manager.generated.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputAction.h"
+#include "InputMappingContext.h"
+#include "RelicManager.generated.h"
 
 UCLASS()
-class ARelic_Manager : public AActor
+class ARelicManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:
-	ARelic_Manager();
+	ARelicManager();
 	
 	//중복 일반,희귀만 가능 + 플레이어가 현재가지고 있는 유물 배열
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Relic")
@@ -40,6 +44,24 @@ public:
 	
 	void BeginPlay() override;
 	void RandomRelic();
+	//인풋 테스트
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputMappingContext* IMC_Relic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputAction* IA_Relic1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputAction* IA_Relic2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputAction* IA_Relic3;
+	
+	void SelectRelic1();
+	
+	void SelectRelic2();
+	
+	void SelectRelic3();
 	
 	ERelicGrade NormalRollGrade();
 	

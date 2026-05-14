@@ -16,16 +16,16 @@ struct FRelicData : public FTableRowBase
 	
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	int32 RelicId;
+	int32 RelicId = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName RelicName;
+	FName RelicName = "Name";
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ERelicGrade Grade;
+	ERelicGrade Grade = ERelicGrade::Common;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ERelicStatType RelicStat;
+	ERelicStatType RelicStat = ERelicStatType::MaxHP;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<URelicEffectBase> EffectClass;
