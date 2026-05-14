@@ -84,3 +84,8 @@ DerivedDataCache/*
 
 # Prerequisites
 *.d
+
+# ReSharper / Rider user settings
+*.sln.DotSettings.user
+
+# Rider auto-generated plugin /Plugins/Developer/RiderLink/
