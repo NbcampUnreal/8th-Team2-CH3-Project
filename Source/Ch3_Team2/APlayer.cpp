@@ -144,10 +144,6 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 		// 등록 했는지 확인
 		if (!Skill->IsRegistered())
 			Skill->RegisterComponent();
-		// 호출 되는지 확인
-		GEngine->AddOnScreenDebugMessage(
-	-1,	3.0f,FColor::Yellow,
-	FString::Printf(TEXT("Skill Active: Cool %s"), Skill));
 		
 		if (Skill)
 			Skill->ActiveCheck();
@@ -220,6 +216,7 @@ void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Cr
 	if (ChildActor)
 	{
 		AGunBase* Gun = Cast<AGunBase>(ChildActor);
+		if (!Gun) return;
 		// 성유물 로 인한 공격력 증가 , 크리티컬 도 포함
 		Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 	}

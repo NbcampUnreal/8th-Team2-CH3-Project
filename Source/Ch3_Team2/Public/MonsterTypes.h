@@ -10,9 +10,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathDelegate,AController*,Instig
 UENUM(BlueprintType)
 enum class EMonsterGrade : uint8
 {
-	Normal UMETA(DisplayName = "Normal"),
-	Elite UMETA(DisplayName = "Elite"),
-	Boss UMETA(DisplayName = "Boss"),
+	None,
+	Melee,
+	Ranged,
+	EliteMelee,
+	EliteRanged,
+	Boss
 };
 
 USTRUCT(BlueprintType)
@@ -39,5 +42,5 @@ struct  FMonsterStats
 	int32 Score;
 	
 	FMonsterStats():MaxHP(100.f),CurrentHP(100.f),AttackDamage(5.f),MaxWalkSpeed(300.f),MovementSpeed(300.f),
-	AttackRate(1.5f),AttackRange(100.f),Score(100){};
+	AttackRate(1.5f),AttackRange(100.f),MonsterGrade(EMonsterGrade::None),Score(100){};
 };

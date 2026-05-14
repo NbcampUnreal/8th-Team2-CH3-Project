@@ -36,16 +36,6 @@ void UMonsterStatComponent::TakeDamage(AActor* DamagedActor, float Damage, const
 	}
 }
 
-float UMonsterStatComponent::GetAttackRange() const
-{
-	return Stats.AttackRange;
-}
-
-float UMonsterStatComponent::GetAttackRate() const
-{
-	return Stats.AttackRate;
-}
-
 bool UMonsterStatComponent::IsDead() const
 {
 	return bIsDead;

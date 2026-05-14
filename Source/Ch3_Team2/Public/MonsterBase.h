@@ -32,7 +32,10 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UMonsterStatComponent* StatComp;
-
+	//블루프린트에서 추가해줌
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UMonsterAttackComponent* AttackComp;
+	
 	FTimerHandle DeathTimerHandle;
 	UFUNCTION()
 	void HandleDeath(AController* InInstigator);
