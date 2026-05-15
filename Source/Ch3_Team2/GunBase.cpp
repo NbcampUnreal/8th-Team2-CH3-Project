@@ -113,6 +113,7 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 
 	if (!Monster || !BattleSubsystem) return;
 
+	// TODO: blsCritical 기능 추가
 	BattleSubsystem->ExecuteDamageCalculation(
 		GetOwner(), 
 		Monster, 

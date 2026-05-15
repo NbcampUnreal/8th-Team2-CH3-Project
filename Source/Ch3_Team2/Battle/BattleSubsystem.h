@@ -33,7 +33,7 @@ class CH3_TEAM2_API UBattleSubsystem : public UGameInstanceSubsystem
 	
 public:
 	FOnBattleSummarySignature OnBattleResult;
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Battle")
 	void ExecuteDamageCalculation(AActor* Attacker, AActor* Victim, float BaseDamage, bool bIsCritical, float CritMultiplier);
 	float CalculateFinalDamage(AActor* Attacker, float BaseDamage, bool bIsCritical, float CritMultiplier);
@@ -42,5 +42,5 @@ public:
 
 private:
 	int32 TotalDamage = 0;
-	TMap<EMonsterGrade, int32> GradeKillCounts;
+	TArray<FMonsterKillReport> Reports;
 };

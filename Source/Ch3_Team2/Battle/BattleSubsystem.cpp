@@ -6,7 +6,10 @@
 
 void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim, float BaseDamage, bool bIsCritical, float CritMultiplier)
 {
-	if (!Attacker || !Victim) return;
+	if (!Attacker || !Victim)
+	{
+		return;
+	}
 
 	float FinalDamage = CalculateFinalDamage(Attacker, BaseDamage, bIsCritical, CritMultiplier);
 	TotalDamage += FMath::RoundToInt32(FinalDamage);
@@ -47,22 +50,37 @@ float UBattleSubsystem::CalculateFinalDamage(AActor* Attacker, float BaseDamage,
 
 void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 {
+    // TODO: 몬스터 델리게이트로 받기
 	AMonsterBase* Monster = Cast<AMonsterBase>(Victim);
-	if (Monster && Monster->GetStatComponent() && Monster->GetStatComponent()->IsDead()) 
+	if (!Monster || !Monster->GetStatComponent() || !Monster->GetStatComponent()->IsDead())
 	{
-		EMonsterGrade VictimGrade = Monster->GetStatComponent()->GetMonsterTag();
-		GradeKillCounts.FindOrAdd(VictimGrade)++;
+		return;
+	}
+
+	EMonsterGrade VictimGrade = Monster->GetStatComponent()->GetMonsterTag();
+	
+	bool bFound = false;
+	for (FMonsterKillReport& Report : Reports)
+	{
+		if (Report.MonsterGrade == VictimGrade)
+		{
+			++Report.KillCount;
+			bFound = true;
+			break;
+		}
+	}
+
+	if (!bFound)
+	{
+		Reports.Add(FMonsterKillReport(VictimGrade, 1));
 	}
 }
 
 void UBattleSubsystem::BroadcastBattleResult()
 {
-	if (!OnBattleResult.IsBound()) return;
-
-	TArray<FMonsterKillReport> Reports;
-	for (const auto& Pair : GradeKillCounts)
+	if (!OnBattleResult.IsBound())
 	{
-		Reports.Add(FMonsterKillReport(Pair.Key, Pair.Value));
+		return;
 	}
 	OnBattleResult.Broadcast(Reports, TotalDamage);
 }
