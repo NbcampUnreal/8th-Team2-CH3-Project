@@ -8,11 +8,11 @@
 UENUM(BlueprintType)
 enum class EPartsName : uint8
 {
-	eNone,
-	eBullet UMETA(DisplayName = "Bullet"),
-	eMagazine UMETA(DisplayName = "Magazine"),
-	eScope UMETA(DisplayName = "Scope"),
-	eHandle UMETA(DisplayName = "Handle")
+	None,
+	Bullet,
+	Magazine,
+	Scope,
+	Handle
 };
 
 USTRUCT(BlueprintType)
@@ -30,5 +30,5 @@ struct FGunParts
 	float Value = 0.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gun_Parts")
-	EPartsName Parts =EPartsName::eNone;
+	EPartsName Parts =EPartsName::None;
 };

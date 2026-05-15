@@ -21,16 +21,13 @@
 // Sets default values
 AAPlayer::AAPlayer()
 {
-	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 		
-	// Create a CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
 	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
@@ -41,45 +38,39 @@ AAPlayer::AAPlayer()
 	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
 	ChildActor->SetupAttachment(Mesh1P);
 	
-	// Tick 함수 호출 false 거부 
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = false; // 
+	PrimaryActorTick.bStartWithTickEnabled = false;
 	
 	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
 	MagnetComp->SetupAttachment(RootComponent);
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
 	
-	
-	// 점프 높이 초기값 420
 	GetCharacterMovement()->JumpZVelocity = 420.0f;
 	
 }
 
 void AAPlayer::PlayerInit()
 {
-	// -- 스킬 Component 장착
+	// Attach Weapon
 	ChildActor->AttachToComponent(
-	Mesh1P,
-	FAttachmentTransformRules::SnapToTargetIncludingScale,
-	TEXT("GripPoint"));
+		Mesh1P,
+		FAttachmentTransformRules::SnapToTargetIncludingScale,
+		TEXT("GripPoint")
+	);
 }
 
 void AAPlayer::StatInitialization()
 {
-	// 체력 
 	MaxHp = 100;
 	CurrentHp = MaxHp;
-	// 속도 또는 좀프 관련
+	
 	MoveSpeed = 600.0f;
 	JumpZVelocity = 420.0f;
 	
-	// 언리얼 엔진에서는 cm단위이기 때문에 10m 는 1000cm이다.
 	MagnetRadius = 1000.0f;
-	// 자석 범위 설정
 	MagnetComp->SetSphereRadius(MagnetRadius);
 	
-	// 경험치 및 레벨업 관련
 	Exp = 0;
 	LevelUpExp = 200;
 	Level = 1;
@@ -87,10 +78,10 @@ void AAPlayer::StatInitialization()
 
 void AAPlayer::BeginPlay()
 {
-	// 플레이어 모습 초기화
+	Super::BeginPlay();
+
 	PlayerInit();
 	
-	// 스텟 초기화
     StatInitialization();
 	
 	// NewObject<타입>(Outer, Class)
@@ -99,7 +90,6 @@ void AAPlayer::BeginPlay()
 
 	// 만약 인터페이스나 특정 클래스로 형변환해서 쓰고 싶다면:
 	// USkillBase* Skill = Cast<USkillBase>(SkillInstance);
-	Super::BeginPlay();
 }
 
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -110,7 +100,6 @@ void AAPlayer::Move(const FInputActionValue& Value)
 	// 컨트롤로가 없으면 호출하지 않음.
 	if (Controller != nullptr)
 	{
-		// add movement 
 		// 입력방향으로 이동
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y * MoveSpeed);
 		AddMovementInput(GetActorRightVector(), MovementVector.X * MoveSpeed);
@@ -132,21 +121,21 @@ void AAPlayer::Look(const FInputActionValue& Value)
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
 	AGunBase* Gun = Cast<AGunBase>(ChildActor);
-	// 무기 리로드
 	Gun->Reload();
 }
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
 	if (SkillInstance)
 	{
-		// Component 
 		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		// 등록 했는지 확인
 		if (!Skill->IsRegistered())
+		{
 			Skill->RegisterComponent();
-		
-		if (Skill)
+		}
+		else
+		{
 			Skill->ActiveCheck();
+		}
 	}
 }
 void AAPlayer::NotifyControllerChanged()
@@ -191,82 +180,71 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
-	// 체력회복시 회복된 량이 최대 체력보다 많으면 적으면
 	if (CurrentHp + Add_Hp <= MaxHp)
-		// 일단 체력추가
+	{
 		CurrentHp += Add_Hp;
+	}
 	else
-		//많으면 최대 체력 까지만 추가
+	{
 		CurrentHp = MaxHp;
+	}
 }
+
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
-	// 최대 체력 증가
 	MaxHp += Add_Max_Hp;
-	
-	// 체력이 증가한 만큼 현제 체력도 증가
 	CurrentHp += Add_Max_Hp;
 }
+
 void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
 	MoveSpeed += Add_Speed;
 }
+
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
 {
 	if (ChildActor)
 	{
 		AGunBase* Gun = Cast<AGunBase>(ChildActor);
 		if (!Gun) return;
-		// 성유물 로 인한 공격력 증가 , 크리티컬 도 포함
 		Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 	}
 }
 
 void AAPlayer::AddExp(int32 Add_Exp)
 {
-	// 경험치 추가 
 	Exp += Add_Exp;
 	// Levelup경험치 초과시 
 	// 레벨업 + 경험치 초기화
 	// 만약  Lvelup 시 레벨업 경험치 증가시 따로 추가할 것
 	 if (Exp >= LevelUpExp)
 	 {
-	 	// 최대 레벨이 16이기 때문에 일단 작성
 	 	if (Level < 16)
 	 	{
 	 		Exp -= LevelUpExp;
-	 		LevelupStat();
+	 		LevelUpStat();
 	 	}
 	 }
 }
-void AAPlayer::LevelupStat()
+void AAPlayer::LevelUpStat()
 {
-	// 최대 체력
 	MaxHp += 16;
-	// 레벨업
 	Level++;
-	// 점프 값 증가
 	JumpZVelocity += 8.0f;
-	// 이동속도 증가
 	MoveSpeed += 18.0f;
-	// 점프 높이는 즉시 증가 
 	GetCharacterMovement()->JumpZVelocity += 8.0f;
 }
 
-void AAPlayer::DegreaseSkiilCoolTiem(float SkillCoolTime)
+void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
 {
 	if (SkillInstance)
 	{
-		// Component 
 		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
 		Skill->SkiilDegreaseTime(SkillCoolTime);
 	}
 }
 
-float AAPlayer::TakeDamage(float DamageAmount
-	, struct FDamageEvent const& DamageEvent
-	,class AController* EventInstigator
-	,AActor* DamageCauser)
+float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
 	CurrentHp = FMath::Clamp(CurrentHp, 0.f, MaxHp);
@@ -274,7 +252,9 @@ float AAPlayer::TakeDamage(float DamageAmount
 	UE_LOG(LogTemp, Warning,
 		TEXT("Player Hit! Damage: %f CurrentHP: %d"),
 		DamageAmount,
-		CurrentHp);
+		CurrentHp
+	);
+	
 	/*
 	 Super::TakeDamage(
 		DamageAmount //  데미지
@@ -295,6 +275,5 @@ void AAPlayer::OnDeath()
 {
 	// 사망 로그 호출
 	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
-	
 }
 

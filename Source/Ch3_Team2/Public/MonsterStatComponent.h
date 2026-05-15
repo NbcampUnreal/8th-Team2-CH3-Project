@@ -23,7 +23,7 @@ public:
 	UFUNCTION()
 	void TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InInstigater, AActor* Causer);
 	
-	
+	EMonsterGrade GetMonsterTag() const { return Stats.MonsterGrade; }
 	FORCEINLINE float GetAttackRange() const {return Stats.AttackRange;}
 	FORCEINLINE float GetAttackRate() const {return Stats.AttackRate;}
 	FORCEINLINE float GetAttackDamage() const {return Stats.AttackDamage;}
