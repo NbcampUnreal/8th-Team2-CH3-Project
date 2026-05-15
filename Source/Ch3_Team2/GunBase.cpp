@@ -2,39 +2,42 @@
 
 
 #include "GunBase.h"
+#include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
 
 bool AGunBase::CheckAmmo_Implementation()
 {
 	if (CanFire)
 	{
-		// 사격시
-		CanFire = false;
-
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerFireDelay
 			,this
 			,&AGunBase::HandleFireDelay
 			,1.f / RoundsPerSecond
-			,false);
+			,false
+		);
+		CanFire = false;
+		
 		return true;
 	}
 	return false;
 }
 void AGunBase::Reload_Implementation()
 {
-	// 애니메이션이 끝날 때 호출이 되어야 좋은함수.....
+	// 애니메이션이 끝날 때 호출이 되어야 좋은함수
 	CurrentAmmo = MaxAmmo;
+	
 	GetWorld()->GetTimerManager().SetTimer(
 		TimeReloadDelay
-			,this
-			,&AGunBase::Reload_End
-			,ReloadTime
-			,false);
+		,this
+		,&AGunBase::Reload_End
+		,ReloadTime
+		,false
+	);
 }
+
 void AGunBase::Reload_End()
 {
-	
 	
 }
 
@@ -45,21 +48,16 @@ AGunBase::AGunBase()
 
 void AGunBase::Stats_Initialize()
 {
-	// 탄창
 	MaxAmmo = 12;
 	CurrentAmmo = MaxAmmo;
-	// 연사속도 시간
 	RoundsPerSecond = 1.f;
-	// 사거리
 	EffectiveRange = 1000.f;
 	
-	// 공격력
 	RelicBonus = 0;
-	BaseDamage = 100.f;
+	BaseDamage = 25.f;
 	FinalDamage =RelicBonus + BaseDamage;
 	TotalBonus = 1.0f;
 	
-	// 연사 , 재장전 초기화
 	CanFire = true;
 	ReloadTime = 1.2;
 	ReloadingCheck= true;
@@ -88,33 +86,40 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 		ECC_Visibility, // 블루프린트의 Visibility 채널
 		Params
 	);
+	
 	FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
+	
 	DrawDebugLine(
-	GetWorld(),
-	Location,           // 시작 지점
-	End,                // 끝 지점
-	LColor.ToFColor(true),          // 색상
-	false,              // 매 프레임마다 그릴지 여부 (고정된 라인은 false)
-	2.0f,               // 유지 시간 (초 단위, 블루프린트의 For Duration과 대응)
-	0,                  // 우선순위
-	1.0f);            // 두께
+		GetWorld(),
+		Location,           // 시작 지점
+		End,                // 끝 지점
+		LColor.ToFColor(true),          // 색상
+		false,              // 매 프레임마다 그릴지 여부 (고정된 라인은 false)
+		2.0f,               // 유지 시간 (초 단위, 블루프린트의 For Duration과 대응)
+		0,                  // 우선순위
+		1.0f		// 두께
+	);
 
-	// (옵션) 성공 시 로그 출력 - 테스트용
 	if (bHit)
 	{
-		// 배틀 시스템 호출 샬라샬라
-		AActor* HitActor = HitResult.GetActor();
-		if (HitActor->ActorHasTag("Monster"))
-		{
-			// 몬스터 형변환
-			AMonsterBase* Monster = Cast<AMonsterBase>(HitActor);
-			// 일반공격
-			//AttackAmmoDamage();
-			//크리티컬 공격
-			//AttackCriticalDamage();
-		}
-		UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), *HitActor->GetName());
+		BattleIn(HitResult);
 	}
+}
+
+void AGunBase::BattleIn(const FHitResult& HitResult)
+{
+	AMonsterBase* Monster = Cast<AMonsterBase>(HitResult.GetActor());
+	UBattleSubsystem* BattleSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
+
+	if (!Monster || !BattleSubsystem) return;
+
+	BattleSubsystem->ExecuteDamageCalculation(
+		GetOwner(), 
+		Monster, 
+		FinalDamage, 
+		false, 
+		CritMultiplier
+	);
 }
 
 void AGunBase::HandleFireDelay()
@@ -132,34 +137,33 @@ void AGunBase::AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Criti
 	CritMultiplier += Critical;
 	FinalDamage = (BaseDamage * (1 + Bullet.Value )+ RelicBonus ) * TotalBonus;
 }
+
 void AGunBase::SelectParts(EPartsName parts)
 {
 	switch (parts)
 	{
-	case EPartsName::eBullet:
+	case EPartsName::Bullet:
 		if (Bullet.Level < 4)
 		{
 			Bullet.Value +=0.25;
 			Bullet.Level ++;
-			// 총 공격력 레벨업시 
-			FinalDamageCheck();
 		}
 		break;
-	case EPartsName::eScope:
+	case EPartsName::Scope:
 		if (Scope.Level < 4)
 		{
 			Scope.Value +=0.20;
 			Scope.Level ++;
 		}
 		break;
-	case  EPartsName::eHandle:
+	case  EPartsName::Handle:
 		if (Handle.Level < 4)
 		{
 			Handle.Value +=0.20;
 			Handle.Level ++;
 		}
 		break;
-	case  EPartsName::eMagazine:
+	case  EPartsName::Magazine:
 		if (Magazine.Level < 4)
 		{
 			Magazine.Value +=0.15;
@@ -177,33 +181,28 @@ void AGunBase::InitializeParts()
 	Bullet.Name = "Bullet";
 	Bullet.Level = 1;
 	Bullet.Value = 1.0f;
-	Bullet.Parts = EPartsName::eBullet;
+	Bullet.Parts = EPartsName::Bullet;
 	
 	Magazine.Name = "Magazine";
 	Magazine.Level = 1;
 	Magazine.Value = 0;
-	Magazine.Parts = EPartsName::eMagazine;
+	Magazine.Parts = EPartsName::Magazine;
 	
-
 	Scope.Name = "Scope";
 	Scope.Level = 1;  
 	Scope.Value = 0;  
-	Scope.Parts = EPartsName::eScope;
+	Scope.Parts = EPartsName::Scope;
 	
 	Handle.Name = "Handle";
 	Handle.Level = 1;
 	Handle.Value = 0;
-	Handle.Parts = EPartsName::eHandle;
-	
+	Handle.Parts = EPartsName::Handle;
 }
 
 void AGunBase::BeginPlay()
 {
-	// 파츠 초기화
-	InitializeParts();
-	
-	// 무기 스텟 초기화 
-	Stats_Initialize();
 	Super::BeginPlay();
-}
 
+	InitializeParts();
+	Stats_Initialize();
+}

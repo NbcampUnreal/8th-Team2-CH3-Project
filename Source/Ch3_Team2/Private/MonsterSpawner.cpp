@@ -22,9 +22,9 @@ void AMonsterSpawner::BeginPlay()
 		PreAllocateMonsters();
 	}
 
-
 	//소환 테스트용
-	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AMonsterSpawner::RandomSpawnMonster, 1.0f, true);
+	//GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AMonsterSpawner::RandomSpawnMonster, 1.0f, true);
+	RandomSpawnMonster();
 }
 
 

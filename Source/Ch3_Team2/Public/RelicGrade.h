@@ -16,7 +16,7 @@ UENUM(BlueprintType)
 enum class ERelicStatType : uint8
 {
 	MaxHP,
-	SkillColldown,
+	SkillCooldown,
 	MoveSpeed,
 	AmmoDamage,
 	critical,
