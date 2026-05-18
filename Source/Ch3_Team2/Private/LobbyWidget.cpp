@@ -24,3 +24,8 @@ void ULobbyWidget::OnPlayButtonClicked()
 		}
 	}
 }
+
+TOptional<FUIInputConfig> ULobbyWidget::GetDesiredInputConfig() const
+{
+	return FUIInputConfig(ECommonInputMode::Menu, EMouseCaptureMode::NoCapture);
+}
