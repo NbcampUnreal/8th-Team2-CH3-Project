@@ -29,7 +29,7 @@ protected:
 	void NativeConstruct();
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* Btn_GoToMainMenu;
+	UButton* Btn_GoToMainMenu;
 	
 	UFUNCTION()
 	void OnMainMenuButtonClicked();
