@@ -7,7 +7,7 @@
 
 bool AGunBase::CheckAmmo_Implementation()
 {
-	if (CanFire)
+	if (CanFire && ReloadingCheck == false)
 	{
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerFireDelay
@@ -22,52 +22,33 @@ bool AGunBase::CheckAmmo_Implementation()
 	}
 	return false;
 }
-void AGunBase::Reload_Implementation()
-{
-	// 애니메이션이 끝날 때 호출이 되어야 좋은함수
-	CurrentAmmo = MaxAmmo;
-	
-	GetWorld()->GetTimerManager().SetTimer(
-		TimeReloadDelay
-		,this
-		,&AGunBase::Reload_End
-		,ReloadTime
-		,false
-	);
-}
-
-void AGunBase::Reload_End()
-{
-	
-}
-
 AGunBase::AGunBase()
 {
 	
 }
-
-void AGunBase::Stats_Initialize()
+bool AGunBase::CheckReload()
 {
-	MaxAmmo = 12;
+	// 총알이 가득 차있을 떄 
+	if (CurrentAmmo < MaxAmmo && ReloadingCheck == false )
+	{
+		ReloadingCheck = true;
+		return true;
+	}
+	return false;
+}
+
+void AGunBase::Reloading()
+{
+	// 재장전 되었을 떄 
+	ReloadingCheck = false;
 	CurrentAmmo = MaxAmmo;
-	RoundsPerSecond = 1.f;
-	EffectiveRange = 1000.f;
+	UE_LOG(LogTemp, Log, TEXT("Reloading!!!!"));
 	
-	RelicBonus = 0;
-	BaseDamage = 25.f;
-	FinalDamage =RelicBonus + BaseDamage;
-	TotalBonus = 1.0f;
-	
-	CanFire = true;
-	ReloadTime = 1.2;
-	ReloadingCheck= true;
-	
-	CritMultiplier = 2.0f;
 }
 
 void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 {
-	// 발사
+	// 발사	
 	CurrentAmmo -= 1;
 	// 1. 끝점 계산
 	FVector End = Location + (Direction * EffectiveRange);
@@ -175,7 +156,6 @@ void AGunBase::SelectParts(EPartsName parts)
 	}
 }
 
-
 void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
@@ -204,5 +184,4 @@ void AGunBase::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeParts();
-	Stats_Initialize();
 }

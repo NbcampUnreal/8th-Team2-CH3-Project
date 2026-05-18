@@ -30,43 +30,44 @@ public:
 
 	//기본 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BaseDamage;
+	float BaseDamage =  25;
 	
 	// 성유물로 증가한 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RelicBonus;
-
-	// 최종 공격력 ( 계산 다된거 )  
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float FinalDamage;
+	float RelicBonus = 0;
 	
 	// 전체 공격력 증가 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TotalBonus;
+	float TotalBonus = 1.0f;
+
+	// 최종 공격력 ( 계산 다된거 )  
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FinalDamage = RelicBonus + BaseDamage;
 	
 	// 크리티컬 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CritMultiplier;
+	float CritMultiplier = 2.0f;
 
-	//남은 탄약수
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
-	int32 CurrentAmmo;
-
+	
 	//탄약 보유량
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 MaxAmmo;
+	int32 MaxAmmo = 12;
+	//남은 탄약수
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
+	int32 CurrentAmmo = MaxAmmo;
+
 
 	//연사속도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float RoundsPerSecond;
+	float RoundsPerSecond = 1.0f;
 
 	//유효사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float EffectiveRange;
+	float EffectiveRange = 1000.0f;
 	
 	// 사격 가능 여부 
 	UPROPERTY(BlueprintReadWrite)
-	bool CanFire;
+	bool CanFire = true;
 
 	// 반동
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -74,10 +75,10 @@ public:
 	
 	// 장전시간
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ReloadTime;
+	float ReloadTime = 1.2f;
 	
 	// 현제 장전 여부
-	bool ReloadingCheck;
+	bool ReloadingCheck = false;
 	// 장전 TimeHandle
 	UPROPERTY(BlueprintReadWrite)
 	FTimerHandle TimeReloadDelay;

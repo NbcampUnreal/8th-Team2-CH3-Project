@@ -15,18 +15,16 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 public:
 	AGunBase();
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category= "Weapon")
-	void Reload();
-	void Reload_End();
-
-	// 매개 변수 설정
-	virtual void Stats_Initialize();
-	
 	void InitializeParts();
 	
 	// 블루프린트 위임
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool CheckAmmo();
+	
+	bool CheckReload();
+	
+	UFUNCTION(BlueprintCallable)
+	void Reloading();
 	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void Fire_Gun(FVector Location, FVector Direction);

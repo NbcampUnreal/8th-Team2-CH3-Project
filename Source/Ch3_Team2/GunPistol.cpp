@@ -9,3 +9,4 @@ void AGunPistol::BeginPlay()
 
 	Super::BeginPlay();
 }
+

@@ -24,9 +24,8 @@ class CH3_TEAM2_API AAPlayer : public ACharacter
 {
 	GENERATED_BODY()
 
+public:
 	// 1인칭 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Mesh, meta = (AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* Mesh1P;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
 
@@ -43,6 +42,8 @@ class CH3_TEAM2_API AAPlayer : public ACharacter
 	UInputAction* SkillActive;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ReloadAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ShootAction;
 	
 public:
 	AAPlayer();
@@ -50,43 +51,49 @@ public:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Reload(const FInputActionValue& Value);
+	void Shooting(const FInputActionValue& Value);
 	
 	void SkillInputKey(const FInputActionValue& Value);
 	
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
+	// 에디터 디테일 패널에서 몽타주 에셋을 넣을 수 있는 슬롯을 만듭니다.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* ReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* ShootMontage;
+	
+	
 	// Weapon
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
 	UChildActorComponent* ChildActor;
 
 	virtual void BeginPlay() override;
-	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 	
 	// Stat
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 CurrentHp;
+	int32 MaxHp = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 MaxHp;
+	int32 CurrentHp = MaxHp;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float MoveSpeed;
+	float MoveSpeed = 600.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float JumpZVelocity;
+	float JumpZVelocity = JumpZVelocity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
+	float MagnetRadius;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
+	int32 Exp = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
+	int32 LevelUpExp = 200;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
+	int32 Level = 1;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* MagnetComp; 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* DropExpComp;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float MagnetRadius;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 Exp;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 LevelUpExp;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 Level;
 	
-	void PlayerInit();
 	void StatInitialization();
 	
 	// Setter
