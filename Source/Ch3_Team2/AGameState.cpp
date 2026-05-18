@@ -58,8 +58,7 @@ void AAGameState::OnStageTimerExpired()
 		// 배틀 시스템에서 전투 리포트 출력
 		BattleSubsystem->BroadcastBattleResult();
 		UE_LOG(LogTemp, Warning, TEXT("[StageGameState] 마지막 스테이지 종료 → 메인 레벨로 복귀"));
-		// TODO: 메인 화면으로 가는 대신, 종료 화면 위젯 띄우기
-		LevelFlow->TravelToLevelByIndex(0);
+		OnStageEnd.Broadcast();
 	}
 	else
 	{

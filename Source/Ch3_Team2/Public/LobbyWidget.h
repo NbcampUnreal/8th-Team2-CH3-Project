@@ -21,4 +21,6 @@ protected:
 
 	UFUNCTION()
 	void OnPlayButtonClicked();
+	
+	virtual TOptional<FUIInputConfig> GetDesiredInputConfig() const override;
 };
