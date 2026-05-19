@@ -7,16 +7,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "KismetTraceUtils.h"
-
+#include "Engine/GameInstance.h"
+#include "Battle/BattleSubsystem.h"
 void UMeleeAttackComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (AActor* Owner = GetOwner())
-	{
-		//몬스터가 가진 스텟컴포넌트 주소 시작할때 한번 저장해서 사용
-		CachedStatComp = Owner->FindComponentByClass<UMonsterStatComponent>();
-	}
 }
 
 void UMeleeAttackComponent::ExecuteAttack()
@@ -36,9 +31,9 @@ void UMeleeAttackComponent::CheckHit()
 	{
 		return;
 	}
-	float Damage = CachedStatComp->GetAttackDamage();
-	float Range = CachedStatComp->GetAttackRange();
-	float AttackRadius = 25.0f;
+	Damage = CachedStatComp->GetAttackDamage();
+	Range = CachedStatComp->GetAttackRange();
+	AttackRadius = 25.0f;
 	
 	FVector Start = Owner->GetActorLocation();
 	FVector Forward = Owner->GetActorForwardVector();
@@ -58,8 +53,21 @@ void UMeleeAttackComponent::CheckHit()
 		AActor* HitActor = HitResult.GetActor();
 		if (HitActor && HitResult.GetActor()->IsValidLowLevel())
 		{
-			UGameplayStatics::ApplyDamage(HitResult.GetActor(), Damage, Owner->GetController(), Owner, nullptr);
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s 힛! 데미지: %f"), *HitActor->GetName(), Damage));
+			//UGameplayStatics::ApplyDamage(HitResult.GetActor(), Damage, Owner->GetController(), Owner, nullptr);
+			APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(),0);
+			APawn* HitPawn = Cast<APawn>(HitActor);
+			UBattleSubsystem* BattleSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
+			if (!PlayerPawn || !BattleSubsystem ||!HitPawn) return;
+			if (HitPawn != PlayerPawn) return;
+			
+			BattleSubsystem->ExecuteDamageCalculation(
+				GetOwner(), 
+				PlayerPawn, 
+				Damage, 
+				false, 
+				1
+			);
+			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s 힛! 데미지: %f"), *HitActor->GetName(), Damage));
 		}
 	}
 	

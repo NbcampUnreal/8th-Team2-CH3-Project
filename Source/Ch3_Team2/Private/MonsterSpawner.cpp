@@ -48,8 +48,7 @@ void AMonsterSpawner::PreAllocateMonsters()
 }
 
 
-AMonsterBase* AMonsterSpawner::SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass, const FTransform& Transform,
-                                            const FMonsterStats& InStats)
+AMonsterBase* AMonsterSpawner::SpawnMonster(TSubclassOf<AMonsterBase> MonsterClass, const FTransform& Transform, const FMonsterStats& InStats)
 {
 	AMonsterBase* Monster = Cast<AMonsterBase>(PoolComp->GetActorFromPool(MonsterClass, Transform));
 
@@ -71,10 +70,13 @@ void AMonsterSpawner::RandomSpawnMonster()
 
 	int32 RandomIdx = FMath::RandRange(0, MonsterConfigs.Num() - 1);
 	FMonsterSpawnConfig* SelectedConfig = MonsterConfigs[RandomIdx];
-	if (!SelectedConfig)return;
-
-	FVector RandomLoc = GetActorLocation() + FVector(FMath::RandRange(-200.f, 200.f), FMath::RandRange(-200.f, 200.f),
-	                                                 0.0f);
+	if (!SelectedConfig)
+	{
+		return;
+	}
+	
+	SpawnBound =200.f;
+	FVector RandomLoc = GetActorLocation() + FVector(FMath::RandRange(-SpawnBound, SpawnBound), FMath::RandRange(-SpawnBound, SpawnBound), 0.0f);
 	FTransform Transform(FRotator::ZeroRotator, RandomLoc, FVector::OneVector);
 	SpawnMonster(SelectedConfig->MonsterClass, Transform, SelectedConfig->MonsterStats);
 }
