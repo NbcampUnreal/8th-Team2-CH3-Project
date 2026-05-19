@@ -45,6 +45,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
 	
+	virtual void Tick(float DeltaTime) override;
+	
 public:
 	AAPlayer();
 	
@@ -64,13 +66,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* ShootMontage;
 	
-	
 	// Weapon
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
 	UChildActorComponent* ChildActor;
 
 	virtual void BeginPlay() override;
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+	
+	FRotator TargetRotation;     // 복구해야 할 원본 조준선 저장용
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float Pitch = 2.0f;          // 총 쏠 때 위로 튕길 각도 (도 단위)
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float Rebound = 10.0f;       // 원래대로 돌아오는 속도
 	
 	// Stat
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
@@ -82,7 +91,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float JumpZVelocity = JumpZVelocity;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float MagnetRadius;
+	float MagnetRadius = 1000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 Exp = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")

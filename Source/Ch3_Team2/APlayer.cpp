@@ -18,6 +18,7 @@
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+
 // Sets default values
 AAPlayer::AAPlayer()
 {
@@ -43,7 +44,6 @@ AAPlayer::AAPlayer()
 }
 void AAPlayer::StatInitialization()
 {
-	MagnetRadius = 1000.0f;
 	MagnetComp->SetSphereRadius(MagnetRadius);
 }
 
@@ -52,9 +52,8 @@ void AAPlayer::BeginPlay()
 	
 	Super::BeginPlay();
     StatInitialization();
-	PrimaryActorTick.bStartWithTickEnabled = false;
-	
-	
+	//PrimaryActorTick.bStartWithTickEnabled = false;
+	//SetActorTickEnabled(false);
 	GetCharacterMovement()->JumpZVelocity = 420.0f;
 	
 	// [추가] 게임 시작 직후, 기본 내장 Mesh의 PistolSocket 위치에 무기를 강제로 붙입니다.
@@ -124,7 +123,6 @@ void AAPlayer::Reload(const FInputActionValue& Value)
 		}
 	}
 }
-
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
 	if (ChildActor)
@@ -143,12 +141,30 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 					// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
 					AnimInstance->Montage_Play(ShootMontage, Gun->ReloadTime);
 					Gun->Fire_Gun(CameraLocation,CameraForward);
+					// 카메라 반동
+					if (APlayerController* PC = Cast<APlayerController>(GetController()))
+					{
+						// 1. 총을 쏘기 직전, 현재 정상 조준선을 목표(복구 지점)로 저장합니다.
+						TargetRotation = PC->GetControlRotation();
+						
+						// 2. 현재 시선을 Pitch만큼 강제로 위로 튕깁니다. (-값이 위 방향)
+						FRotator RecoilRot = TargetRotation;
+						RecoilRot.Pitch += Pitch;
+						
+						PC->SetControlRotation(RecoilRot);
+					}
 				}
 			}
 		}
 	}
 }
 
+
+void AAPlayer::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
 	

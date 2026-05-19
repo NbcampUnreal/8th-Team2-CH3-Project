@@ -13,5 +13,8 @@ UCLASS()
 class CH3_TEAM2_API AGunShotGun : public AGunBase
 {
 	GENERATED_BODY()
-	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
+	int32 MultiAmmo = 8;
+	virtual void Fire_Gun(FVector Location, FVector Direction) override;
 };

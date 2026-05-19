@@ -14,17 +14,12 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 
 public:
 	AGunBase();
-
 	void InitializeParts();
-	
-	// 블루프린트 위임
 	bool CheckAmmo();
-	
 	bool CheckReload();
 	
 	UFUNCTION(BlueprintCallable)
 	void Reloading();
-	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void Fire_Gun(FVector Location, FVector Direction);
 	

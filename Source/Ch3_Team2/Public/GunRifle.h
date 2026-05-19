@@ -13,5 +13,6 @@ UCLASS()
 class CH3_TEAM2_API AGunRifle : public AGunBase
 {
 	GENERATED_BODY()
-	
+public:
+	virtual void Fire_Gun(FVector Location, FVector Direction) override;
 };

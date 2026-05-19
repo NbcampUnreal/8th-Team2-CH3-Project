@@ -48,10 +48,14 @@ void AGunBase::Reloading()
 
 void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 {
-	// 발사	
-	CurrentAmmo -= 1;
 	// 1. 끝점 계산
-	FVector End = Location + (Direction * EffectiveRange);
+	//FVector End = Location + (Direction * EffectiveRange);
+	// 여기서 원래 똑바르던 Direction이 무작위로 튄 SpreadDirection으로 재탄생합니다.
+	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SpreadAngleDegrees ));
+
+	// [단계 2] 최종 도착점(End) 계산
+	// 원래 Direction 대신, 탄퍼짐이 적용된 SpreadDirection을 사거리에 곱해 최종 목적지를 구합니다.
+	FVector End = Location + (SpreadDirection * EffectiveRange);
 
 	// 2. 파라미터 설정
 	FHitResult HitResult;
@@ -78,12 +82,14 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 		false,              // 매 프레임마다 그릴지 여부 (고정된 라인은 false)
 		2.0f,               // 유지 시간 (초 단위, 블루프린트의 For Duration과 대응)
 		0,                  // 우선순위
-		1.0f		// 두께
+		0.1f  //두께
 	);
 
 	if (bHit)
 	{
 		BattleIn(HitResult);
+		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
+#include "DrawDebugHelpers.h"
 	}
 }
 
