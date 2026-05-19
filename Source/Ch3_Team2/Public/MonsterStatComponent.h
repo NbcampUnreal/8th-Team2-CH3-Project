@@ -24,14 +24,21 @@ public:
 	void TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InInstigater, AActor* Causer);
 	
 	EMonsterGrade GetMonsterTag() const { return Stats.MonsterGrade; }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetAttackRange() const {return Stats.AttackRange;}
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetAttackRate() const {return Stats.AttackRate;}
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetAttackDamage() const {return Stats.AttackDamage;}
+	UFUNCTION(BlueprintCallable)
 	bool IsDead() const;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnDeathDelegate OnDeath;
 
+	//state tree hit 확인용
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
+	bool bIsHit;
 protected:
 	UPROPERTY(VisibleAnywhere,Category = "Stats")
 	FMonsterStats Stats;

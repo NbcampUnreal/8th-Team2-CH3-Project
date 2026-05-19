@@ -2,6 +2,9 @@
 
 
 #include "MonsterBase.h"
+#include "AIController.h"
+#include "Components/StateTreeAIComponent.h"
+#include "MonsterAttackComponent.h"
 #include "MonsterStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 AMonsterBase::AMonsterBase()
@@ -44,6 +47,7 @@ void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 
 void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
 {
+	
 	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
 	GetCharacterMovement()->StopMovementImmediately();
 	
@@ -51,10 +55,30 @@ void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
 	SetActorEnableCollision(true);
 	SetActorTickEnabled(true);
 	
+	//State tree 활성화
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
+		{
+			STComp->Activate(true);
+			STComp->StartLogic();
+		}
+	}
 }
 
 void AMonsterBase::OnReturnToPool()
 {
+	//State tree 비활성화
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
+		{
+			
+			STComp->StopLogic(TEXT("Aborted"));
+			STComp->Deactivate();
+		}
+	}
+	
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
 	SetActorTickEnabled(false);
