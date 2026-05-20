@@ -52,13 +52,17 @@ AActor* UPoolComponent::GetActorFromPool(TSubclassOf<AActor> Class, const FTrans
 void UPoolComponent::ReturnActorToPool(AActor* Actor)
 {
 	if (!Actor) return;
+	
+	FActorPool& ActorPool = PoolMap.FindOrAdd(Actor->GetClass());
+	//actor 안에 있는지 검사
+	if (ActorPool.InactiveActors.Contains(Actor)) return;
+	
 	//Poolable 상속받은 액터만 pool사용가능
 	if (IPoolable* Poolable = Cast<IPoolable>(Actor))
 	{
 		Poolable->OnReturnToPool();
 	}
-	//있으면 바로 넣고 없으면 만들어서 넣음
-	PoolMap.FindOrAdd(Actor->GetClass()).InactiveActors.Add(Actor);
+	ActorPool.InactiveActors.Add(Actor);
 }
 
 

@@ -27,7 +27,6 @@ AMonsterProjectile::AMonsterProjectile()
 	ProjectileMovement->InitialSpeed = 3000.f; // 발사 속도
 	ProjectileMovement->MaxSpeed = 3000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true; // 날아가는 방향으로 회전
-	InitialLifeSpan = 3.0f;
 }
 
 void AMonsterProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
