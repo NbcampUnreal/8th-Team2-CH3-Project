@@ -14,6 +14,7 @@ class UInputAction;
 class UInputMappingContext;
 class USphereComponent;
 struct FInputActionValue;
+class AHealTotem;
 
 class USkillBaseComp;
 
@@ -25,6 +26,9 @@ class CH3_TEAM2_API AAPlayer : public ACharacter
 	GENERATED_BODY()
 
 public:
+	UPROPERTY()
+	AHealTotem* CurrentTargetStructure;
+	
 	// 1인칭 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
@@ -44,6 +48,8 @@ public:
 	UInputAction* ReloadAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
 	
 	virtual void Tick(float DeltaTime) override;
 	
@@ -54,7 +60,8 @@ public:
 	void Look(const FInputActionValue& Value);
 	void Reload(const FInputActionValue& Value);
 	void Shooting(const FInputActionValue& Value);
-	
+	void Interact(const FInputActionValue& Value);
+
 	void SkillInputKey(const FInputActionValue& Value);
 	
 	virtual void NotifyControllerChanged() override;
@@ -108,16 +115,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* DropExpComp;
 	
-	
-	
 	// Setter
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
+	FORCEINLINE void SetCurrentStructure(class AHealTotem* NewStructure) { CurrentTargetStructure = NewStructure; }
 	
 	// Getter
 	int32 GetCurrentHp() const {return CurrentHp;}
 	int32 GetMapHp() const {return MaxHp;}
 	float GetSpeed() const {return MoveSpeed;}
-	
+	FORCEINLINE AHealTotem* GetCurrentStructure() const { return CurrentTargetStructure; }
+
 	// Add
 	void AddCurrentHp(int32 Add_Hp) ;
 	void AddMaxHp(int32 Add_Max_Hp);
