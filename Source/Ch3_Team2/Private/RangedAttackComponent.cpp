@@ -14,29 +14,42 @@ void URangedAttackComponent::BeginPlay()
 	Super::BeginPlay();
 	//풀관리 액터 미리 저장
 	FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), PoolManagerClass);
+	if (!FoundActor)
+	{
+		return;
+	}
 }
 
 void URangedAttackComponent::ExecuteAttack()
 {
 	
-	AMonsterBase* Owner = Cast<AMonsterBase>(GetOwner());
-	if (Owner && AttackMontage)
+	AMonsterBase* Monster = Cast<AMonsterBase>(GetOwner());
+	if (Monster && AttackMontage)
 	{
-		Owner->PlayAnimMontage(AttackMontage);
+		Monster->PlayAnimMontage(AttackMontage);
 	}
 }
 
 void URangedAttackComponent::CheckHit()
 {
 	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
-	if (!OwnerCharacter || !ProjectileClass|| !CachedStatComp) return;
+	if (!OwnerCharacter || !ProjectileClass|| !CachedStatComp)
+	{
+		return;
+	}
 	
 	// 풀 컴포넌트 찾아오기
 	UPoolComponent* PoolComp = FoundActor->FindComponentByClass<UPoolComponent>();
-	if (!PoolComp) return;
+	if (!PoolComp)
+	{
+		return;
+	}
 	
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(),0);
-	if (!PlayerPawn) return;
+	if (!PlayerPawn)
+	{
+		return;
+	}
 	
 	//플레이어 조준
 	FVector MuzzleLocation = OwnerCharacter->GetMesh()->GetSocketLocation(TEXT("weapon_r_muzzle"));
@@ -47,7 +60,10 @@ void URangedAttackComponent::CheckHit()
 	
 	//액터 가져오기
 	AActor* PooledActor = PoolComp->GetActorFromPool(ProjectileClass, SpawnTransform);
-	if (!PooledActor) return;
+	if (!PooledActor)
+	{
+		return;
+	}
 	
 	
 	if (AMonsterProjectile* Projectile = Cast<AMonsterProjectile>(PooledActor))
