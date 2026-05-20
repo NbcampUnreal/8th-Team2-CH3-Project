@@ -4,17 +4,24 @@
 #include "RelicProbability.h"
 #include "Kismet/GameplayStatics.h"
 #include "Ch3_Team2/APlayer.h"
-
 #include "RelicData.h"
 
 void URelicProbability::ApplyRelic(UObject* WorldContextObject, const FRelicData& NewRelic)
 {
 	if (NewRelic.RelicId == 1016) bIsGainedDamageRelic = true;
 	if (NewRelic.RelicId == 1017) bIsGainedHPRelic = true;
+	
+	
+}
+
+void URelicProbability::DeathMonster()
+{
+	AddStatProbability();
 }
 
 void URelicProbability::AddStatProbability() const
 {
+	UE_LOG(LogTemp, Log, TEXT("AddStatProbability"));
 	if (bIsGainedDamageRelic || bIsGainedHPRelic)
 	{
 		AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));

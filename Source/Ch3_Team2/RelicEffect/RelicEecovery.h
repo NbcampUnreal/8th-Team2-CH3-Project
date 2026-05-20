@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "RelicEffect/RelicEffectBase.h"
-#include "RelicProbability.generated.h"
+#include "RelicEecovery.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class CH3_TEAM2_API URelicProbability : public URelicEffectBase
+class CH3_TEAM2_API URelicEecovery : public URelicEffectBase
 {
 	GENERATED_BODY()
 	
@@ -18,14 +18,10 @@ public:
 	
 	virtual void ApplyRelic(UObject* WorldContextObject, const FRelicData& NewRelic) override;
 	
-	bool bIsGainedHPRelic = false;
-	bool bIsGainedDamageRelic = false;
-	
-	void AddStatProbability() const;
+	void Healing();
+
 	
 protected:
 	
-	UFUNCTION(blueprintCallable , Category = "RelicEffect")
-	void DeathMonster();
-	
+	FTimerHandle EcoveryTimer;
 };
