@@ -131,35 +131,60 @@ void AGunBase::SelectParts(EPartsName parts)
 	switch (parts)
 	{
 	case EPartsName::Bullet:
-		if (Bullet.Level < 4)
+		if (Bullet.Level < MaxLevelParts)
 		{
-			Bullet.Value +=0.25;
-			Bullet.Level ++;
+			Bullet.Value += LevelUpDamageValue;
+			++Bullet.Level;
+			// 탄환 데미지가 올랐으므로 최종 데미지 공식 실시간 재계산
+			AddDamage(0.0f, 0.0f, 0.0f); 
 		}
 		break;
 	case EPartsName::Scope:
-		if (Scope.Level < 4)
+		if (Scope.Level < MaxLevelParts)
 		{
-			Scope.Value +=0.20;
-			Scope.Level ++;
+			Scope.Value += LevelUpScopeValue;
+			++Scope.Level;
+			// 필요 시 크리티컬 확률이나 조준 보정 로직을 이곳에 연동
 		}
 		break;
-	case  EPartsName::Handle:
-		if (Handle.Level < 4)
+	case EPartsName::Handle:
+		if (Handle.Level < MaxLevelParts)
 		{
-			Handle.Value +=0.20;
-			Handle.Level ++;
+			Handle.Value += LevelUpHandleValue;
+			++Handle.Level;
+			// 반동 감소 로직이나 재장전 속도 변경이 필요하다면 여기서 연동
 		}
 		break;
-	case  EPartsName::Magazine:
-		if (Magazine.Level < 4)
+	case EPartsName::Magazine:
+		if (Magazine.Level < MaxLevelParts)
 		{
-			Magazine.Value +=0.15;
-			Magazine.Level ++;
+			// 1탄창 강화 시 탄수 수치 증가
+			Magazine.Value += LevelUpReloadValue;
+			++Magazine.Level;
+            
+			// 기획에 맞춘 실질적인 최대 탄수 증가 연동 (예: 레벨당 5발 추가)
+			AddAmmo(5.0f); 
 		}
 		break;
 	default:
 		break;
+	}
+}
+
+FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
+{
+	switch (PartsType)
+	{
+	case EPartsName::Bullet:   
+		return Bullet;
+	case EPartsName::Magazine:
+		return Magazine;
+	case EPartsName::Scope:    
+		return Scope;
+	case EPartsName::Handle:   
+		return Handle;
+	default:                   
+		return FGunParts();
 	}
 }
 

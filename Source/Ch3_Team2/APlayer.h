@@ -82,6 +82,11 @@ public:
 	float Rebound = 10.0f;       // 원래대로 돌아오는 속도
 	
 	// Stat
+	
+	const int32 MaxLevel = 16;
+	const int32 MaxHPIncrease = 16;
+	const float SpeedIncrease = 18.0;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 MaxHp = 100;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
@@ -89,7 +94,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed = 600.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float JumpZVelocity = JumpZVelocity;
+	float JumpZVelocity = 420.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MagnetRadius = 1000.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
@@ -103,7 +108,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* DropExpComp;
 	
-	void StatInitialization();
+	
 	
 	// Setter
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
@@ -111,6 +116,7 @@ public:
 	// Getter
 	int32 GetCurrentHp() const {return CurrentHp;}
 	int32 GetMapHp() const {return MaxHp;}
+	float GetSpeed() const {return MoveSpeed;}
 	
 	// Add
 	void AddCurrentHp(int32 Add_Hp) ;
@@ -128,6 +134,14 @@ public:
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	UObject* SkillInstance;
+	
+	// UI에서 파츠 레벨업 버튼을 누르면 호출할 함수
+	UFUNCTION(BlueprintCallable, Category = "Player|Upgrade")
+	void UpgradeWeaponParts(EPartsName PartsType);
+
+	// UI에서 현재 파츠 정보를 화면에 띄우기 위해 데이터를 가져오는 함수
+	UFUNCTION(BlueprintCallable, Category = "Player|Upgrade")
+	FGunParts GetCurrentWeaponPartsData(EPartsName PartsType);
 	
 	virtual float TakeDamage(
 		float DamageAmount

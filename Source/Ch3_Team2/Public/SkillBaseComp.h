@@ -14,22 +14,18 @@ class CH3_TEAM2_API USkillBaseComp : public UActorComponent ,public ISkillInterf
 public:	
 	USkillBaseComp();
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	// ----- base 데이터만 설정해놓기
-	
-	// 플레이어 데이터 입력시 같이 넣을 예정
-	void ResetDataSkill();
+	virtual void TickComponent(float DeltDaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	// 액티브 스킬 사용후 재사용 대기 시간
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-	float SkillCoolTime;
+	float SkillCoolTime = 20.0f;
 
 	// 현제  스킬 쿨타임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-	float CurrentSkillCoolTime;
+	float CurrentSkillCoolTime = 0;
 	
 	//스킬 사용여부 SkillInputKey 에 추가해서 중복 스킬 잠가버리기
-	bool SkillActiveCheck; 
+	bool SkillActiveCheck =true; 
 	
 	//스킬 효과가 유지되는 지속 시간
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Skill")
@@ -42,5 +38,4 @@ public:
 	virtual void CoolDownSkill(float DeltaTime);
 	
 	void DecreaseTimeSkill(float Decrease);
-	
 };

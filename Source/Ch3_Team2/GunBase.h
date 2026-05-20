@@ -28,18 +28,35 @@ public:
 	void AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical);
 	
 	void BattleIn(const FHitResult& HitResult);
-	void SelectParts(EPartsName parts);
 	
 	int32 GetMaxAmmoStat(){return MaxAmmo;}
-	float GetReloadStat(){return ReloadTime;}
-	void AddMaxAmmoStat(float AddAmmo){MaxAmmo +=AddAmmo;}
+	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
+	
+	float GetReloadSpeed(){return ReloadTime;}
 	void AddReloadStat(float AddReload);
 	
 	// Weapon Parts
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Bullet;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Magazine;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Scope;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Handle;
+	
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Parts")
+	void SelectParts(EPartsName parts);
+
+	// [추가] UI에서 특정 파츠의 현재 정보(이름, 레벨, 수치)를 읽어갈 수 있는 Getter 함수
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon|Parts")
+	FGunParts GetPartsData(EPartsName PartsType) const;
+	
+	const int32 MaxLevelParts = 4;
+	const float LevelUpDamageValue = 0.25;
+	const float LevelUpReloadValue = 0.15f;
+	const float LevelUpScopeValue = 0.2f;
+	const float LevelUpHandleValue =0.2f;
 	
 protected:
 	virtual void BeginPlay() override;

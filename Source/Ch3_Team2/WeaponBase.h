@@ -14,20 +14,18 @@ class CH3_TEAM2_API AWeaponBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AWeaponBase();
-	
-	//
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USceneComponent> Root;
 
 	// Gun SkeletalMesh
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USkeletalMeshComponent* GunMesh;
-	
-	// 발사 위치.... 이건  흠..
-	// 수정 예정
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UArrowComponent> FirePoint;
 
+	// 기본 스텟은 샷건 기준으로 되어 있습니다.
 	//기본 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category= "Stat")
 	float BaseDamage =  25;
@@ -51,10 +49,10 @@ public:
 	
 	//탄약 보유량
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
-	int32 MaxAmmo = 12;
+	int32 MaxAmmo = 8;
 	//남은 탄약수
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category= "Stat")
-	int32 CurrentAmmo = MaxAmmo;
+	int32 CurrentAmmo = 8;
 
 	//연사속도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
@@ -69,8 +67,8 @@ public:
 	bool CanFire = true;
 
 	// 반동
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
-	FVector2D SpreadAngle;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
+	//FVector2D SpreadAngle;
 	
 	// 장전시간
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
