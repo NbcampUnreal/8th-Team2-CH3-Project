@@ -1,46 +1,40 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Skill_SlowTimeComp.h"
-
+#include "GameFramework/GameState.h"
 #include "Kismet/GameplayStatics.h"
 
-void USkill_SlowTimeComp::ActiveCheck()
+void USkill_SlowTimeComp::ActiveSkill()
 {
-	// 부모 클레스에서 이미 사용되고 있음.
-	Super::ActiveCheck();
-}
+	Super::ActiveSkill();
+	// 1. 전역 시간을 0.2배속으로 (세상 모든 것이 느려짐)
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), WorldTime);
 
-void USkill_SlowTimeComp::SkillActive()
-{
+	// 정상속도로 플레이 되어야 하는 객체들
 	AActor* Owner = GetOwner();
-	// 1. 전역 시간을 0.1배속으로 (세상 모든 것이 느려짐)
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.2f);
-	Owner->CustomTimeDilation = 5.0f;
+	Owner->CustomTimeDilation = 1 / WorldTime;
+	AGameState * State = GetWorld()->GetGameState<AGameState>();
+	State->CustomTimeDilation = 1 / WorldTime;
 	
 	// 종료 함수 호출
 	GetWorld()->GetTimerManager().SetTimer(	SkillTimerHandle
 			,this
-			,&USkill_SlowTimeComp::SkillEnd
-			,ActiveSkilltime *0.2f
+			,&USkill_SlowTimeComp::EndSkill
+			,ActiveSkillTime *WorldTime
 			,false
 			);
 	
-	Super::SkillActive();
 }
+	
 
-void USkill_SlowTimeComp::SkillEnd()
+void USkill_SlowTimeComp::EndSkill()
 {
-	/*
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, 
-		FString::Printf(TEXT("스킬 종료 ")));
-	UE_LOG(LogTemp,Warning,TEXT("스킬종료"));
-	 */
+	// 스킬 Time 헨들러 초기화
+	GetWorld()->GetTimerManager().ClearTimer(SkillTimerHandle);
 	// 스킬 종료 함수 호출
 	// 시간 정상화
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
 	AActor* Owner = GetOwner();
 	Owner->CustomTimeDilation = 1.0f;
-
-	Super::SkillEnd();
+	AGameState * State = GetWorld()->GetGameState<AGameState>();
+	State->CustomTimeDilation = 1.0f;
+	
 }

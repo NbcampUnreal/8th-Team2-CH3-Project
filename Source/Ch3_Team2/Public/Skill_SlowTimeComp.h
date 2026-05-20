@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,16 +5,15 @@
 #include "SkillBaseComp.h"
 #include "Skill_SlowTimeComp.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class CH3_TEAM2_API USkill_SlowTimeComp : public USkillBaseComp
 {
 	GENERATED_BODY()
+public:
+	virtual void ActiveSkill()override;
+	void EndSkill();
 	
-	virtual void ActiveCheck()override;
-	virtual void SkillActive()override;
-	virtual void SkillEnd();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category= "Time")
+	float WorldTime = 0.2f;
 	
 };

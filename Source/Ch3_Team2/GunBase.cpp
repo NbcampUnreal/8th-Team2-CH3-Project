@@ -4,10 +4,11 @@
 #include "GunBase.h"
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
+#include "DrawDebugHelpers.h"
 
-bool AGunBase::CheckAmmo_Implementation()
+bool AGunBase::CheckAmmo()
 {
-	if (CanFire)
+	if (CanFire && ReloadingCheck == false && CurrentAmmo > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerFireDelay
@@ -22,55 +23,40 @@ bool AGunBase::CheckAmmo_Implementation()
 	}
 	return false;
 }
-void AGunBase::Reload_Implementation()
-{
-	// 애니메이션이 끝날 때 호출이 되어야 좋은함수
-	CurrentAmmo = MaxAmmo;
-	
-	GetWorld()->GetTimerManager().SetTimer(
-		TimeReloadDelay
-		,this
-		,&AGunBase::Reload_End
-		,ReloadTime
-		,false
-	);
-}
-
-void AGunBase::Reload_End()
-{
-	
-}
-
 AGunBase::AGunBase()
 {
 	
 }
-
-void AGunBase::Stats_Initialize()
+bool AGunBase::CheckReload()
 {
-	MaxAmmo = 12;
+	// 총알이 가득 차있을 떄 
+	if (CurrentAmmo < MaxAmmo && ReloadingCheck == false )
+	{
+		ReloadingCheck = true;
+		return true;
+	}
+	return false;
+}
+
+void AGunBase::Reloading()
+{
+	// 재장전 되었을 떄 
+	ReloadingCheck = false;
 	CurrentAmmo = MaxAmmo;
-	RoundsPerSecond = 1.f;
-	EffectiveRange = 1000.f;
+	UE_LOG(LogTemp, Log, TEXT("Reloading!!!!"));
 	
-	RelicBonus = 0;
-	BaseDamage = 25.f;
-	FinalDamage =RelicBonus + BaseDamage;
-	TotalBonus = 1.0f;
-	
-	CanFire = true;
-	ReloadTime = 1.2;
-	ReloadingCheck= true;
-	
-	CritMultiplier = 2.0f;
 }
 
 void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 {
-	// 발사
-	CurrentAmmo -= 1;
 	// 1. 끝점 계산
-	FVector End = Location + (Direction * EffectiveRange);
+	//FVector End = Location + (Direction * EffectiveRange);
+	// 여기서 원래 똑바르던 Direction이 무작위로 튄 SpreadDirection으로 재탄생합니다.
+	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SpreadAngleDegrees ));
+
+	// [단계 2] 최종 도착점(End) 계산
+	// 원래 Direction 대신, 탄퍼짐이 적용된 SpreadDirection을 사거리에 곱해 최종 목적지를 구합니다.
+	FVector End = Location + (SpreadDirection * EffectiveRange);
 
 	// 2. 파라미터 설정
 	FHitResult HitResult;
@@ -97,12 +83,13 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 		false,              // 매 프레임마다 그릴지 여부 (고정된 라인은 false)
 		2.0f,               // 유지 시간 (초 단위, 블루프린트의 For Duration과 대응)
 		0,                  // 우선순위
-		1.0f		// 두께
+		0.1f  //두께
 	);
 
 	if (bHit)
 	{
 		BattleIn(HitResult);
+		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
 	}
 }
 
@@ -176,6 +163,13 @@ void AGunBase::SelectParts(EPartsName parts)
 	}
 }
 
+void AGunBase::AddReloadStat(float AddReload)
+{
+	if (ReloadTime + AddReload >= 0.1f)
+	{
+		ReloadTime += AddReload;
+	}
+}
 
 void AGunBase::InitializeParts()
 {
@@ -205,5 +199,4 @@ void AGunBase::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeParts();
-	Stats_Initialize();
 }

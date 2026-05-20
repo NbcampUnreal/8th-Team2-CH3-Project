@@ -18,6 +18,7 @@
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+
 // Sets default values
 AAPlayer::AAPlayer()
 {
@@ -28,81 +29,65 @@ AAPlayer::AAPlayer()
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
-	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-	Mesh1P->SetOnlyOwnerSee(true);
-	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-	Mesh1P->bCastDynamicShadow = false;
-	Mesh1P->CastShadow = false;
-	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
-	
+	GetMesh()->AddRelativeLocation(FVector(10.0f,0,0));
+	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
 	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
-	ChildActor->SetupAttachment(Mesh1P);
+	ChildActor->SetupAttachment(GetMesh());
 	
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = false;
 	
 	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
 	MagnetComp->SetupAttachment(RootComponent);
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
 	
-	GetCharacterMovement()->JumpZVelocity = 420.0f;
-	
 }
-
-void AAPlayer::PlayerInit()
-{
-	// Attach Weapon
-	ChildActor->AttachToComponent(
-		Mesh1P,
-		FAttachmentTransformRules::SnapToTargetIncludingScale,
-		TEXT("GripPoint")
-	);
-}
-
 void AAPlayer::StatInitialization()
 {
-	MaxHp = 100;
-	CurrentHp = MaxHp;
-	
-	MoveSpeed = 600.0f;
-	JumpZVelocity = 420.0f;
-	
-	MagnetRadius = 1000.0f;
 	MagnetComp->SetSphereRadius(MagnetRadius);
-	
-	Exp = 0;
-	LevelUpExp = 200;
-	Level = 1;
 }
 
 void AAPlayer::BeginPlay()
 {
-	Super::BeginPlay();
-
-	PlayerInit();
 	
+	Super::BeginPlay();
     StatInitialization();
+	//PrimaryActorTick.bStartWithTickEnabled = false;
+	//SetActorTickEnabled(false);
+	GetCharacterMovement()->JumpZVelocity = 420.0f;
+	
+	// [추가] 게임 시작 직후, 기본 내장 Mesh의 PistolSocket 위치에 무기를 강제로 붙입니다.
+	if (ChildActor && GetMesh())
+	{
+		ChildActor->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("GripPoint") // 사용할 소켓 이름
+		);
+	}
 	
 	// NewObject<타입>(Outer, Class)
 	// Skil component Object화 
-	SkillInstance = NewObject<UObject>(this, SkillComp);
-
-	// 만약 인터페이스나 특정 클래스로 형변환해서 쓰고 싶다면:
-	// USkillBase* Skill = Cast<USkillBase>(SkillInstance);
+	if (SkillComp)
+		SkillInstance = NewObject<UObject>(this, SkillComp);
+	else
+	{
+		
+	}
 }
-
 void AAPlayer::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
+	
 	// 컨트롤로가 없으면 호출하지 않음.
 	if (Controller != nullptr)
 	{
 		// 입력방향으로 이동
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y * MoveSpeed);
 		AddMovementInput(GetActorRightVector(), MovementVector.X * MoveSpeed);
+		
 	}
 }
 void AAPlayer::Look(const FInputActionValue& Value)
@@ -117,26 +102,77 @@ void AAPlayer::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	AGunBase* Gun = Cast<AGunBase>(ChildActor);
-	Gun->Reload();
+	if (ChildActor)
+	{
+		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
+		if (Gun->CheckReload())
+		{
+			// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
+			UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+			// 2. 애님 인스턴스와 우리가 에디터에서 등록할 몽타주 에셋이 모두 안전하게 존재할 때만 실행합니다.
+			if (AnimInstance && ReloadMontage)
+			{
+				if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
+				{
+					// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
+					AnimInstance->Montage_Play(ReloadMontage, Gun->ReloadTime);
+				}
+			}
+		}
+	}
+}
+void AAPlayer::Shooting(const FInputActionValue& Value)
+{
+	if (ChildActor)
+	{
+		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
+		if (Gun->CheckAmmo())
+		{
+			UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+			if (AnimInstance && ShootMontage)
+			{
+				if (!AnimInstance->Montage_IsPlaying(ShootMontage))
+				{
+					// 2. [블루프린트 완벽 재현] 카메라의 위치와 정면 방향 벡터를 구합니다.
+					FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
+					FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+					// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
+					AnimInstance->Montage_Play(ShootMontage, Gun->ReloadTime);
+					Gun->Fire_Gun(CameraLocation,CameraForward);
+					// 카메라 반동
+					if (APlayerController* PC = Cast<APlayerController>(GetController()))
+					{
+						// 1. 총을 쏘기 직전, 현재 정상 조준선을 목표(복구 지점)로 저장합니다.
+						TargetRotation = PC->GetControlRotation();
+						
+						// 2. 현재 시선을 Pitch만큼 강제로 위로 튕깁니다. (-값이 위 방향)
+						FRotator RecoilRot = TargetRotation;
+						RecoilRot.Pitch += Pitch;
+						
+						PC->SetControlRotation(RecoilRot);
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void AAPlayer::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
 }
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
-	if (SkillInstance)
-	{
-		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		if (!Skill->IsRegistered())
-		{
-			Skill->RegisterComponent();
-		}
-		else
-		{
-			Skill->ActiveCheck();
-		}
-	}
+	
+	USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
+	if (!Skill->IsRegistered())
+		Skill->RegisterComponent();
+	
+	Skill->ActiveSkill();
 }
 void AAPlayer::NotifyControllerChanged()
 {
@@ -170,14 +206,13 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(SkillActive, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
 		
 		//Reload Activing
-		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
-	}
-	else
-	{
-		//UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AAPlayer::Reload);
+		
+		// Shoot Actiiving
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AAPlayer::Shooting);
+		
 	}
 }
-
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
 	if (CurrentHp + Add_Hp <= MaxHp)
@@ -189,18 +224,16 @@ void AAPlayer::AddCurrentHp(int32 Add_Hp)
 		CurrentHp = MaxHp;
 	}
 }
-
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
 	MaxHp += Add_Max_Hp;
 	CurrentHp += Add_Max_Hp;
 }
-
 void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
-	MoveSpeed += Add_Speed;
+	if (MoveSpeed - Add_Speed > 0 )
+		MoveSpeed += Add_Speed;
 }
-
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
 {
 	if (ChildActor)
@@ -210,7 +243,6 @@ void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Cr
 		Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 	}
 }
-
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
@@ -234,16 +266,14 @@ void AAPlayer::LevelUpStat()
 	MoveSpeed += 18.0f;
 	GetCharacterMovement()->JumpZVelocity += 8.0f;
 }
-
 void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
 {
 	if (SkillInstance)
 	{
 		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		Skill->SkiilDegreaseTime(SkillCoolTime);
+		Skill->DecreaseTimeSkill(SkillCoolTime);
 	}
 }
-
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
