@@ -23,6 +23,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void CheckHit();
 protected:
+	virtual void BeginPlay() override;
+	UPROPERTY()
+	class UMonsterStatComponent* CachedStatComp;
 	
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	class UAnimMontage* AttackMontage;

@@ -38,8 +38,11 @@ void AAGameState::Tick(float DeltaTime)
 	RemainingTime = FMath::Max(0.f, RemainingTime - DeltaTime);
 
 	if (GEngine)
+	{
 		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::Yellow,
 			FString::Printf(TEXT("Stage Time: %.1f"), RemainingTime));
+		
+	}
 }
 
 void AAGameState::OnStageTimerExpired()
