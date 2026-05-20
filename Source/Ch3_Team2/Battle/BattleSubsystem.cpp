@@ -12,7 +12,10 @@ void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim
 	}
 
 	float FinalDamage = CalculateFinalDamage(Attacker, BaseDamage, bIsCritical, CritMultiplier);
-	TotalDamage += FMath::RoundToInt32(FinalDamage);
+	if (Attacker->ActorHasTag(FName("Player")))
+	{
+		TotalDamage += FMath::RoundToInt32(FinalDamage);
+	}
 
 	Victim->TakeDamage(
 		FinalDamage,
