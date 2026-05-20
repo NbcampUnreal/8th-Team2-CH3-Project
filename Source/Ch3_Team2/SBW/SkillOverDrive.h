@@ -14,7 +14,6 @@ class CH3_TEAM2_API USkillOverDrive : public USkillBaseComp
 {
 	GENERATED_BODY()
 public:
-	USkillOverDrive();
-	AActor* MyGun;
+	//AActor* MyGun;
 	virtual void ActiveSkill();
 };

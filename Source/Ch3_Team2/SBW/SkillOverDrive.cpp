@@ -7,7 +7,7 @@
 
 void USkillOverDrive::ActiveSkill()
 {
-	
+	/*
 	// 1. 이 컴포넌트를 소유한 액터(플레이어)를 가져와 캐스팅합니다.
 	AAPlayer* PlayerOwner = Cast<AAPlayer>(GetOwner());
 	if (!PlayerOwner) return;
@@ -28,6 +28,7 @@ void USkillOverDrive::ActiveSkill()
 			MyGun = MyGunBase; 
 		}
 	}
+	 */
 	
 	Super::ActiveSkill();
 }

@@ -4,6 +4,7 @@
 #include "GunBase.h"
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
+#include "DrawDebugHelpers.h"
 
 bool AGunBase::CheckAmmo()
 {
@@ -89,7 +90,6 @@ void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 	{
 		BattleIn(HitResult);
 		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
-#include "DrawDebugHelpers.h"
 	}
 }
 
