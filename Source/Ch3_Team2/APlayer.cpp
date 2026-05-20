@@ -178,16 +178,11 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 
 void AAPlayer::Interact(const FInputActionValue& Value)
 {
-	// 오버랩을 통해 주소가 저장된 토템이 내 주변에 존재하는지 검사
 	if (CurrentTargetStructure)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[Player] %s 토템과 상호작용을 시작합니다."), *CurrentTargetStructure->GetName());
-
-		// 토템에게 "나(this)랑 상호작용 하자"며 명령 전달
 		CurrentTargetStructure->Interact(this);
-        
-		// 상호작용이 끝나 토템이 지워질 것이므로 변수를 안전하게 비워줌
-		CurrentTargetStructure = nullptr;
+        CurrentTargetStructure = nullptr;
 	}
 	else
 	{

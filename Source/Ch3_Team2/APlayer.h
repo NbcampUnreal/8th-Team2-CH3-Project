@@ -115,8 +115,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* DropExpComp;
 	
-	
-	
 	// Setter
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
 	FORCEINLINE void SetCurrentStructure(class AHealTotem* NewStructure) { CurrentTargetStructure = NewStructure; }
@@ -125,7 +123,7 @@ public:
 	int32 GetCurrentHp() const {return CurrentHp;}
 	int32 GetMapHp() const {return MaxHp;}
 	float GetSpeed() const {return MoveSpeed;}
-	FORCEINLINE class AHealTotem* GetCurrentStructure() const { return CurrentTargetStructure; }
+	FORCEINLINE AHealTotem* GetCurrentStructure() const { return CurrentTargetStructure; }
 
 	// Add
 	void AddCurrentHp(int32 Add_Hp) ;
