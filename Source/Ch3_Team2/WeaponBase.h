@@ -28,11 +28,11 @@ protected:
 	// 기본 스텟은 샷건 기준으로 되어 있습니다.
 	//기본 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category= "Stat")
-	float BaseDamage =  25;
+	float BaseDamage =  25.0f;
 	
 	// 성유물로 증가한 공격력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
-	float RelicBonus = 0;
+	float RelicBonus = 0.0f;
 	
 	// 전체 공격력 증가 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
@@ -40,7 +40,7 @@ protected:
 
 	// 최종 공격력 ( 계산 다된거 )  
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
-	float FinalDamage = RelicBonus + BaseDamage;
+	float FinalDamage = 0.0f;
 	
 	// 크리티컬 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")

@@ -7,15 +7,13 @@ USkillBaseComp::USkillBaseComp()
 
 void USkillBaseComp::BeginPlay()
 {
-	PrimaryComponentTick.bStartWithTickEnabled = false;
 	Super::BeginPlay();
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 void USkillBaseComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	// 스킬 쿨타임 확인용
-	CoolDownSkill(DeltaTime);
-	
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	CoolDownSkill(DeltaTime);
 }
 void USkillBaseComp::ActiveSkill()
 {
