@@ -41,6 +41,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Boss Skill|Plasma Orb")
 	UAnimMontage* PlasmaMontage;
 	
+	UPROPERTY()
 	AActor* FoundActor;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss Skill|Power Slam", meta = (AllowPrivateAccess = "true"))

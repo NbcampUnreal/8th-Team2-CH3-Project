@@ -38,7 +38,7 @@ protected:
 	
 	FTimerHandle DeathTimerHandle;
 	UFUNCTION()
-	void HandleDeath(AController* InInstigator);
+	void HandleDeath(AController* InInstigator,AActor* DeathActor);
 	void AfterDeath();
 	
 	

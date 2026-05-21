@@ -32,7 +32,7 @@ void UMonsterStatComponent::TakeDamage(AActor* DamagedActor, float Damage, const
 	if (Stats.CurrentHP <= 0)
 	{
 		bIsDead= true;
-		OnDeath.Broadcast(InInstigater);
+		OnDeath.Broadcast(InInstigater,DamagedActor);
 	}
 	
 	// Test Log

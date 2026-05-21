@@ -59,12 +59,12 @@ void ABossPlasmaOrb::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
         if (BattleSubsystem)
         {
             BattleSubsystem->ExecuteDamageCalculation(
-    GetOwner(), 
-    PlayerPawn, 
-            OrbDamage, 
-    false, 
-    1
-            );
+                GetOwner(),
+                PlayerPawn, 
+                OrbDamage, 
+                false, 
+                1
+               );
         }
         DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 5, FColor::Green, false, 3.f);
     }

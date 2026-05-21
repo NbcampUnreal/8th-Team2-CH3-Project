@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "MonsterTypes.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathDelegate,AController*,Instigator);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeathDelegate,AController*,Instigator,AActor*,DeathActor);
 
 UENUM(BlueprintType)
 enum class EMonsterGrade : uint8

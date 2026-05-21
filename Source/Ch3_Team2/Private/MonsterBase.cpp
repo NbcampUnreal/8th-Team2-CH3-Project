@@ -28,7 +28,7 @@ FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 	return OnMonsterDeath;
 }
 
-void AMonsterBase::HandleDeath(AController* InInstigator)
+void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 {
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
