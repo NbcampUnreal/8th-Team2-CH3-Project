@@ -1,5 +1,5 @@
 #include "RelicManager.h"
-#include "RelicEffectBase.h"
+#include "Ch3_Team2/RelicEffect/RelicEffectBase.h"
 #include "Ch3_Team2/APlayer.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -31,86 +31,32 @@ void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
 	
 	if (Effect)
 	{
-		Effect->ApplyEffect(Player,NewRelic);
+		Effect->ApplyRelic(Player,NewRelic);
 	}
 }
 
 void ARelicManager::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//테스트 키 바인딩
-	APlayerController* PC =
-		GetWorld()->GetFirstPlayerController();
-
-	if (!PC) return;
-
-	EnableInput(PC);
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-			PC->GetLocalPlayer());
-
-	if (Subsystem)
-	{
-		Subsystem->AddMappingContext(IMC_Relic, 0);
-	}
-
-	UEnhancedInputComponent* EIC =
-		Cast<UEnhancedInputComponent>(InputComponent);
-
-	if (EIC)
-	{
-		EIC->BindAction(
-			IA_Relic1,
-			ETriggerEvent::Started,
-			this,
-			&ARelicManager::SelectRelic1);
-
-		EIC->BindAction(
-			IA_Relic2,
-			ETriggerEvent::Started,
-			this,
-			&ARelicManager::SelectRelic2);
-
-		EIC->BindAction(
-			IA_Relic3,
-			ETriggerEvent::Started,
-			this,
-			&ARelicManager::SelectRelic3);
-	}
-	
 	
 	RandomRelicOption.Empty();
 	AllRelics.Empty();
 
-	if (!RelicDataTable)
+	if (!RelicDataTable) return;
+	
+	TArray<FRelicData*> AllRelicRows;
+	
+	FString ContextString(TEXT("Relic Data Context"));
+	
+	RelicDataTable->GetAllRows<FRelicData>(ContextString, AllRelicRows);
+	for (FRelicData* RelicPtr : AllRelicRows)
 	{
-		return;
-	}
-	
-	
-
-	TArray<FRelicData*> RelicData;
-	RelicDataTable->GetAllRows(TEXT("Relic"), RelicData);
-
-	for (FRelicData* Relic : RelicData)
-	{
-		if (!Relic) continue;
-
-		AllRelics.Add(*Relic);
-	}
-	
-	RandomRelic();
-	
-	for (FRelicData Relic : RandomRelicOption)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			5.f,
-			FColor::Red,
-			FString::Printf(TEXT("Relic : %s"), *Relic.RelicName.ToString())
-			);
+		if (!RelicPtr)
+		{
+		    continue;
+		}
+		
+		AllRelics.Add(*RelicPtr);
 	}
 }
 
@@ -138,10 +84,8 @@ void ARelicManager::RandomRelic()
 
 		FRelicData PickedRelic;
 
-		if (!GetRandomRelicByGrade(Grade, PickedRelic))
-		{
-			continue;
-		}
+		if (!GetRandomRelicByGrade(Grade, PickedRelic)) continue;
+		
 
 		bool bAlreadyInOption =
 			RandomRelicOption.ContainsByPredicate([&](const FRelicData& RelicData)
@@ -149,14 +93,12 @@ void ARelicManager::RandomRelic()
 				return RelicData.RelicId == PickedRelic.RelicId;
 			});
 		
-		if (PickedRelic.RelicId == 0) return;
+		if (!PickedRelic.RelicId) return;
 		
 		bool bIsBlocked = BlockedRelicIDs.Contains(PickedRelic.RelicId);
 
-		if (bAlreadyInOption || bIsBlocked)
-		{
-			continue;
-		}
+		if (bAlreadyInOption || bIsBlocked) continue;
+		
 
 		RandomRelicOption.Add(PickedRelic);
 	}
@@ -176,10 +118,8 @@ bool ARelicManager::GetRandomRelicByGrade(
 		}
 	}
 
-	if (Candidates.Num() == 0)
-	{
-		return false;
-	}
+	if (!Candidates.Num()) return false;
+	
 
 	int32 RandIndex =
 		FMath::RandRange(0, Candidates.Num() - 1);
@@ -189,20 +129,12 @@ bool ARelicManager::GetRandomRelicByGrade(
 	return true;
 }
 
-void ARelicManager::SelectRelic1()
+void ARelicManager::OnEliteMonsterDead()
 {
-	if (RandomRelicOption.Num() <= 0) return;
-	AddOwnedRelic(RandomRelicOption[0]);
-}
-
-void ARelicManager::SelectRelic2()
-{
-	if (RandomRelicOption.Num() <= 0) return;
-	AddOwnedRelic(RandomRelicOption[1]);
-}
-
-void ARelicManager::SelectRelic3()
-{
-	if (RandomRelicOption.Num() <= 0) return;
-	AddOwnedRelic(RandomRelicOption[2]);
+	RandomRelic();
+	
+	if (OnRelicRewardGenerated.IsBound())
+	{
+		OnRelicRewardGenerated.Broadcast(RandomRelicOption);
+	}
 }

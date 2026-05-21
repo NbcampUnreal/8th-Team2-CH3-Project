@@ -4,7 +4,7 @@
 #include "RelicData.h"
 #include "Ch3_Team2/APlayer.h"
 
-void URelicEffectBase::ApplyEffect(UObject* WorldContextObject,const FRelicData& Relic)
+void URelicEffectBase::ApplyRelic(UObject* WorldContextObject,const FRelicData& Relic)
 {
 	AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(WorldContextObject, 0));
 	if (!Player) return;

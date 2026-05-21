@@ -34,7 +34,10 @@ public:
 	int32 Value = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Probability = 0.f;
+	FText Description;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* RelicImage;
 	
 };
 

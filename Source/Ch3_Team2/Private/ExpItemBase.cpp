@@ -12,7 +12,7 @@ AExpItemBase::AExpItemBase()
 	
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-	//pawn민 오버랩 허용
+	//WorldDynamic만 오버랩 허용(수정 할수 있음)
 	SphereComponent->SetCollisionResponseToChannel(ECC_WorldDynamic,ECR_Overlap);
 	
 	

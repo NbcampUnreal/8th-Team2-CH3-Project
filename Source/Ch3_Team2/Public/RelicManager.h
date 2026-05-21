@@ -4,11 +4,9 @@
 #include "RelicData.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "InputAction.h"
-#include "InputMappingContext.h"
 #include "RelicManager.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRelicRewardGeneratedSignature, const TArray<FRelicData>&, RewardChoices);
 
 UCLASS()
 class ARelicManager : public AActor
@@ -36,6 +34,7 @@ public:
 		ERelicGrade Grade,
 		FRelicData& OutRelic);
 	
+	UFUNCTION(BlueprintCallable, Category = "Relic")
 	void AddOwnedRelic(const FRelicData& NewRelic);
 	
 	//데이터 테이블 받기
@@ -44,24 +43,12 @@ public:
 	
 	void BeginPlay() override;
 	void RandomRelic();
-	//인풋 테스트
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UInputMappingContext* IMC_Relic;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UInputAction* IA_Relic1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UInputAction* IA_Relic2;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UInputAction* IA_Relic3;
+	UFUNCTION(BlueprintCallable, Category = "Relic")
+	void OnEliteMonsterDead();
 	
-	void SelectRelic1();
-	
-	void SelectRelic2();
-	
-	void SelectRelic3();
+	UPROPERTY(BlueprintAssignable, Category = "Relic")
+	FOnRelicRewardGeneratedSignature OnRelicRewardGenerated;
 	
 	ERelicGrade NormalRollGrade();
 	
