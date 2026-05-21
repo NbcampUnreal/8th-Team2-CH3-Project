@@ -53,21 +53,25 @@ void UMeleeAttackComponent::CheckHit()
 		AActor* HitActor = HitResult.GetActor();
 		if (HitActor && HitResult.GetActor()->IsValidLowLevel())
 		{
-			//UGameplayStatics::ApplyDamage(HitResult.GetActor(), Damage, Owner->GetController(), Owner, nullptr);
-			APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(),0);
-			APawn* HitPawn = Cast<APawn>(HitActor);
-			UBattleSubsystem* BattleSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
-			if (!PlayerPawn || !BattleSubsystem ||!HitPawn) return;
-			if (HitPawn != PlayerPawn) return;
 			
-			BattleSubsystem->ExecuteDamageCalculation(
+			APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(),0);
+			if (PlayerPawn)
+			{
+				UBattleSubsystem* BattleSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
+				if (BattleSubsystem)
+				{
+					if (HitActor == PlayerPawn)
+					{
+						BattleSubsystem->ExecuteDamageCalculation(
 				GetOwner(), 
 				PlayerPawn, 
-				Damage, 
+						Damage, 
 				false, 
 				1
-			);
-			//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%s 힛! 데미지: %f"), *HitActor->GetName(), Damage));
+						);
+					}
+				}
+			}
 		}
 	}
 	
