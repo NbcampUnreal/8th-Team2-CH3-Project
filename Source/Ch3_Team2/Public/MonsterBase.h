@@ -17,6 +17,7 @@ class CH3_TEAM2_API AMonsterBase : public ACharacter,public IPoolable
 public:	
 	AMonsterBase();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Spawn")
 	class AMonsterSpawner* MonsterSpawner;
 	UPROPERTY(BlueprintAssignable,Category="Events")
@@ -41,6 +42,11 @@ protected:
 	void HandleDeath(AController* InInstigator,AActor* DeathActor);
 	void AfterDeath();
 	
+	//exp아이템
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> ExpItemClass;
+	UFUNCTION()
+	void DropExpItem();
 	
 	virtual void OnSpawnFromPool(const FTransform& Transform) override;
 	virtual void OnReturnToPool() override;

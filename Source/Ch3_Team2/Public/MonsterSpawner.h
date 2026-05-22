@@ -33,6 +33,10 @@ struct FMonsterSpawnConfig : public FTableRowBase
 	//몬스터 스텟
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FMonsterStats MonsterStats;
+	
+	//몬스터 확률
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
+	int32 SpawnWeight = 10;
 };
 
 UCLASS()
@@ -50,7 +54,7 @@ public:
 	void RandomSpawnMonster();
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UPROPERTY(VisibleAnywhere)
 	class UPoolComponent* PoolComp;
 	
@@ -58,10 +62,28 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Setting")
 	UDataTable* MonsterTable;
 	
+	FMonsterSpawnConfig* GetRandomMonster();
+	void GetMonsterSpawnTransform(FMonsterSpawnConfig* SelectedConfig,FTransform& Transform);
+	
 	//미리 Table에서 정보를 읽어옴
 	TArray<FMonsterSpawnConfig*> MonsterConfigs;
 	
 	FTimerHandle SpawnTimerHandle;
+	
+
+
+	void SpawnBossMonster();
+	UPROPERTY(EditAnywhere, Category = "Spawner|Boss")
+	float BossSpawnDelay = 300.f;
+	FTimerHandle BossSpawnTimerHandle;
 private:
-	float SpawnBound;
+	//카운터 줄여주는 함수
+	UFUNCTION()
+	void OnMonsterDespawned(AActor* DespawnedActor);
+	
+	UPROPERTY(EditAnywhere, Category = "Spawner|Rules")
+	int32 MaxActiveMonsters = 40;
+
+	UPROPERTY(VisibleAnywhere, Category = "Spawner|Status")
+	int32 CurrentActiveMonsters = 0;
 };

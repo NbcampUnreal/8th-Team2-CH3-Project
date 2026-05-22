@@ -23,9 +23,31 @@ void AMonsterBase::BeginPlay()
 	
 }
 
+void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+}
+
 FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 {
 	return OnMonsterDeath;
+}
+
+void AMonsterBase::DropExpItem()
+{
+	UWorld* World = GetWorld();
+	if (World && ExpItemClass)
+	{
+		FVector SpawnLocation = GetActorLocation();
+		FRotator SpawnRotation = GetActorRotation();
+        
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+
+		//경험치 아이템을 소환
+		World->SpawnActor<AActor>(ExpItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+	}
 }
 
 void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
@@ -34,11 +56,11 @@ void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->StopMovementImmediately();
 	
+	// 경험치 아이템 드롭
+	DropExpItem();
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
-
-
 
 void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 {

@@ -173,6 +173,8 @@ void UBossSkillComponent::ExecuteSpawnPlasmaOrb()
     FVector SpawnLocation =BossCharacter->GetActorLocation();
     FVector TargetLocation = PlayerPawn->GetActorLocation();
     FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(BossCharacter->GetActorLocation() ,TargetLocation);
+    SpawnLocation = SpawnLocation + (BossCharacter->GetActorForwardVector() * 150.0f) + FVector(0.0f, 0.0f, 60.0f);
+                          
     FTransform SpawnTransform(SpawnRotation,SpawnLocation);
     
     
