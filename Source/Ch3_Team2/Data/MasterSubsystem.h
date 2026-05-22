@@ -28,15 +28,25 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBattleSummarySignature,
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCurrencyChanged, int32, NewAmount, int32, Delta);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveTime, int32, StageIndex, float, ClearTime);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameEnd);
+
 UCLASS()
 class CH3_TEAM2_API UMasterSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 	
 public:
-	// 방송 채널들
 	UPROPERTY()
 	FOnBattleSummarySignature OnBattleResult;
+	
 	UPROPERTY()
 	FOnCurrencyChanged OnCurrencyChanged;
+	
+	UPROPERTY()
+	FOnSaveTime OnSaveTime;
+	
+	UPROPERTY()
+	FOnGameEnd OnGameEnd;
 };

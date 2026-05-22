@@ -28,13 +28,8 @@ void APortal::BeginPlay()
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &APortal::OnPortalOverlap);
 }
 
-void APortal::OnPortalOverlap(
-	UPrimitiveComponent* OverlappedComp,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& SweepResult)
+void APortal::OnPortalOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep,const FHitResult& SweepResult)
 {
 	if (bAlreadyTriggered)
 	{
@@ -49,26 +44,7 @@ void APortal::OnPortalOverlap(
 
 	bAlreadyTriggered = true;
 
-	ULevelFlowSubsystem* LevelFlow = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>();
-	if (!LevelFlow)
-	{
-		return;
-	}
-
-	if (LevelFlow->IsLastLevel())
-	{
-		if (UBattleSubsystem* BattleSubsystem = GetGameInstance()->GetSubsystem<UBattleSubsystem>())
-		{
-			BattleSubsystem->BroadcastBattleResult();
-		}
-
-		if (AAGameState* GS = GetWorld()->GetGameState<AAGameState>())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[StageGameState] 마지막 스테이지 종료 → 메인 레벨로 복귀"));
-			GS->OnStageEnd.Broadcast();
-		}
-	}
-	else
+	if (ULevelFlowSubsystem* LevelFlow = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
 	{
 		LevelFlow->TravelToNextLevel();
 	}

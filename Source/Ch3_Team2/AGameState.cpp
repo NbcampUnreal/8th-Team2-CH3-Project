@@ -1,7 +1,7 @@
 #include "AGameState.h"
 
-#include "Battle/BattleSubsystem.h"
 #include "Data/LevelFlowSubsystem.h"
+#include "Data/MasterSubsystem.h"
 
 AAGameState::AAGameState()
 {
@@ -11,14 +11,42 @@ AAGameState::AAGameState()
 void AAGameState::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	bIsTracking = true;
 }
 
 void AAGameState::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (bIsTracking)
+	{
+		PlayTime += DeltaTime;
+	}
 }
 
 void AAGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+	
+	bIsTracking = false;
+	
+	if (EndPlayReason == EEndPlayReason::EndPlayInEditor)
+	{
+		return;
+	}
+
+	const auto* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if(!MasterSubsystem)
+	{
+		return;
+	}
+	
+	if (const auto* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+	{
+		if (LevelFlowSubsystem->GetPrevLevelIndex() != 0)
+		{
+			MasterSubsystem->OnSaveTime.Broadcast(LevelFlowSubsystem->GetPrevLevelIndex() - 1, PlayTime);
+		}
+	}
 }
