@@ -56,7 +56,6 @@ public:
 	
 	virtual void Tick(float DeltaTime) override;
 	
-public:
 	AAPlayer();
 	
 	void Move(const FInputActionValue& Value);
@@ -104,7 +103,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 LevelUpExp = 200;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 Level = 1;
+	int32 Level = 0;
 	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
@@ -120,13 +119,15 @@ public:
 	
 	// Setter
 	void SetHp(int32 Set_Hp) { MaxHp = Set_Hp;}
-	FORCEINLINE void SetCurrentStructure(class AHealTotem* NewStructure) { CurrentTargetStructure = NewStructure; }
+	FORCEINLINE void SetCurrentStructure(class AHealTotem* NewStructure) 
+	{ CurrentTargetStructure = NewStructure; }
 	
 	// Getter
 	int32 GetCurrentHp() const {return CurrentHp;}
 	int32 GetMapHp() const {return MaxHp;}
 	float GetSpeed() const {return MoveSpeed;}
-	FORCEINLINE AHealTotem* GetCurrentStructure() const { return CurrentTargetStructure; }
+	FORCEINLINE AHealTotem* GetCurrentStructure() const 
+	{ return CurrentTargetStructure; }
 
 	// Add
 	void AddCurrentHp(int32 Add_Hp) ;
@@ -163,7 +164,7 @@ public:
 	
 	// 반동 복구 속도 (값이 클수록 빠르게 원래대로 돌아옵니다)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|Recoil")
-	float RecoilRecoverySpeed = 5.0f;
+	float RecoilRecoverySpeed = 3.0f;
 	
 	virtual float TakeDamage(
 		float DamageAmount

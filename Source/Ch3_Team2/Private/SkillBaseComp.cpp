@@ -37,11 +37,11 @@ void USkillBaseComp::CoolDownSkill(float DeltaTime)
 
 void USkillBaseComp::DecreaseTimeSkill(float Decrease)
 {
-	if (SkillCoolTime - Decrease > 0.5f)
+	if (SkillCoolTime - Decrease > MinimumSkillTime)
 	{
 		SkillCoolTime-=Decrease;
-		if (SkillCoolTime <= 0.5f)
-			SkillCoolTime = 0.5f;
+		if (SkillCoolTime <= MinimumSkillTime)
+			SkillCoolTime = MinimumSkillTime;
 	}
 }
 

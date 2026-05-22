@@ -31,6 +31,8 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Skill")
 	float ActiveSkillTime =5.0f;
 	
+	float MinimumSkillTime = 0.5f;
+	
 	// 스킬 시전 지속시간 스킬handle
 	FTimerHandle SkillTimerHandle;
 	

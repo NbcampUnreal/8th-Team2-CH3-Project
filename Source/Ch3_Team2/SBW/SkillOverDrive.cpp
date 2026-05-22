@@ -3,6 +3,13 @@
 #include "GunBase.h"
 #include "APlayer.h"
 
+void USkillOverDrive::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(SkillTimerHandle);
+	
+	Super::EndPlay(EndPlayReason);
+}
+
 void USkillOverDrive::ActiveSkill()
 {
 	Super::ActiveSkill();
@@ -24,11 +31,12 @@ void USkillOverDrive::ActiveSkill()
 		{
 			//float CurrentSpeed = GetOwner()->GetActorSpeed();
 			SaveReload = CachedGun->GetReloadSpeed();
-			SaveReload =SaveReload * Percent - SaveReload;
-			CachedGun->AddReloadStat(SaveReload);
+			SaveReload *= Percent;
+			CachedGun->DegreaseReloadTimeStat(SaveReload);
 			
 			SaveSpeed = PlayerOwner->GetSpeed();
-			SaveSpeed = SaveSpeed * Percent - SaveSpeed;
+			SaveSpeed *= Percent;
+			
  			PlayerOwner->AddPlayerSpeed(SaveSpeed);
 			bSkillActiveCheck = false;
 
@@ -58,8 +66,9 @@ void USkillOverDrive::EndSkill()
 	{
 		// [스탯 원상 복구]
 		PlayerOwner->AddPlayerSpeed(-SaveSpeed);
-		CachedGun->AddReloadStat(-SaveReload); 
+		CachedGun->DegreaseReloadTimeStat(-SaveReload); 
+		SaveSpeed = 0.0f;
+		SaveReload = 0.0f;
 	}
-	CachedGun = nullptr;
 	bSkillActiveCheck= true;
 }
