@@ -11,15 +11,19 @@ class CH3_TEAM2_API AAGameState : public AGameState
 {
 	GENERATED_BODY()
 	
-	public:
-		AAGameState();
-	
-		UPROPERTY(BlueprintAssignable, Category = "GameFlow")
-		FOnStageEndDelegate OnStageEnd;
-	
-		virtual void Tick(float DeltaTime) override;
+public:
+	AAGameState();
 
-	protected:
-		virtual void BeginPlay() override;
-		virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	UPROPERTY(BlueprintAssignable, Category = "GameFlow")
+	FOnStageEndDelegate OnStageEnd;
+
+	virtual void Tick(float DeltaTime) override;
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+private:
+	float PlayTime = 0.0f;
+	bool bIsTracking = false;
 };

@@ -12,14 +12,14 @@ class CH3_TEAM2_API USaveData : public USaveGame
 public:
 	UPROPERTY(SaveGame) int32 SaveVersion = 2;
 	
+	UPROPERTY(SaveGame) TArray<float> StageClearTime = {0.f, 0.f, 0.f};
+	
+	
+	// TODO: 아래 내용들 저장 해야됨
 	UPROPERTY(SaveGame) int32 PlayerLevel = 0;
 	
 	UPROPERTY(SaveGame) int32 Character = 0; // Enum
 	UPROPERTY(SaveGame) int32 Weapon = 0; // Enum
-	
-	UPROPERTY(SaveGame) float Stage1Time = 0;
-	UPROPERTY(SaveGame) float Stage2Time = 0;
-	UPROPERTY(SaveGame) float Stage3Time = 0;
 	
 	UPROPERTY(SaveGame) int32 MeleeKills = 0;
 	UPROPERTY(SaveGame) int32 RangedKills = 0;
