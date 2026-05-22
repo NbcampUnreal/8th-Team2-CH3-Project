@@ -9,5 +9,7 @@ void AGunShotGun::Fire_Gun(FVector Location, FVector Direction)
 	CurrentAmmo -= 1;
 	
 	for (int32 i = 0; i < MultiAmmo; i++)
+	{
 		Super::Fire_Gun(Location, Direction);
+	}
 }

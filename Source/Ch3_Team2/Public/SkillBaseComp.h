@@ -22,10 +22,10 @@ public:
 
 	// 현제  스킬 쿨타임
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-	float CurrentSkillCoolTime = 0;
+	float CurrentSkillCoolTime = 0.0f;
 	
 	//스킬 사용여부 SkillInputKey 에 추가해서 중복 스킬 잠가버리기
-	bool SkillActiveCheck =true; 
+	bool bSkillActiveCheck =true; 
 	
 	//스킬 효과가 유지되는 지속 시간
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Skill")

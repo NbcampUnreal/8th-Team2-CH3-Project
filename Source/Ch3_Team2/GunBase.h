@@ -29,11 +29,15 @@ public:
 	
 	void BattleIn(const FHitResult& HitResult);
 	
-	int32 GetMaxAmmoStat(){return MaxAmmo;}
+	int32 GetCurrentAmmo(){return CurrentAmmo;}
+	int32 GetMaxAmmo(){return MaxAmmo;}
 	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
 	
 	float GetReloadSpeed(){return ReloadTime;}
 	void AddReloadStat(float AddReload);
+	
+	void AddCritical(float Critical){CritMultiplier += Critical;}
+	
 	
 	// Weapon Parts
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
@@ -53,7 +57,7 @@ public:
 	FGunParts GetPartsData(EPartsName PartsType) const;
 	
 	const int32 MaxLevelParts = 4;
-	const float LevelUpDamageValue = 0.25;
+	const float LevelUpDamageValue = 0.25f;
 	const float LevelUpReloadValue = 0.15f;
 	const float LevelUpScopeValue = 0.2f;
 	const float LevelUpHandleValue =0.2f;

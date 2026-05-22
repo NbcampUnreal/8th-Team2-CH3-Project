@@ -98,7 +98,10 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 	AMonsterBase* Monster = Cast<AMonsterBase>(HitResult.GetActor());
 	UBattleSubsystem* BattleSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
 
-	if (!Monster || !BattleSubsystem) return;
+	if (!Monster || !BattleSubsystem)
+	{
+		return;
+	}
 
 	// TODO: blsCritical 기능 추가
 	BattleSubsystem->ExecuteDamageCalculation(
@@ -133,41 +136,36 @@ void AGunBase::SelectParts(EPartsName parts)
 	case EPartsName::Bullet:
 		if (Bullet.Level < MaxLevelParts)
 		{
-			Bullet.Value += LevelUpDamageValue;
 			++Bullet.Level;
-			// 탄환 데미지가 올랐으므로 최종 데미지 공식 실시간 재계산
-			AddDamage(0.0f, 0.0f, 0.0f); 
+			Bullet.Value += LevelUpDamageValue;
 		}
 		break;
 	case EPartsName::Scope:
 		if (Scope.Level < MaxLevelParts)
 		{
-			Scope.Value += LevelUpScopeValue;
 			++Scope.Level;
-			// 필요 시 크리티컬 확률이나 조준 보정 로직을 이곳에 연동
+			SpreadAngleDegrees -= Scope.Value;
 		}
 		break;
 	case EPartsName::Handle:
 		if (Handle.Level < MaxLevelParts)
 		{
-			Handle.Value += LevelUpHandleValue;
 			++Handle.Level;
-			// 반동 감소 로직이나 재장전 속도 변경이 필요하다면 여기서 연동
+			Recoil -= Handle.Value; 
 		}
 		break;
 	case EPartsName::Magazine:
 		if (Magazine.Level < MaxLevelParts)
 		{
-			// 1탄창 강화 시 탄수 수치 증가
-			Magazine.Value += LevelUpReloadValue;
 			++Magazine.Level;
-            
-			// 기획에 맞춘 실질적인 최대 탄수 증가 연동 (예: 레벨당 5발 추가)
-			AddAmmo(5.0f); 
+			ReloadTime -= Magazine.Value;
 		}
 		break;
 	default:
+		{
+			
 		break;
+		}
 	}
 }
 
@@ -175,14 +173,22 @@ FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 {
 	switch (PartsType)
 	{
-	case EPartsName::Bullet:   
-		return Bullet;
+	case EPartsName::Bullet:
+		{
+			return Bullet;
+		}
 	case EPartsName::Magazine:
-		return Magazine;
-	case EPartsName::Scope:    
-		return Scope;
-	case EPartsName::Handle:   
-		return Handle;
+		{
+			return Magazine;
+		}
+	case EPartsName::Scope:
+		{
+			return Scope;
+		}
+	case EPartsName::Handle:
+		{
+			return Handle;
+		}
 	default:                   
 		return FGunParts();
 	}
@@ -200,22 +206,22 @@ void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
 	Bullet.Level = 1;
-	Bullet.Value = 1.0f;
+	Bullet.Value = LevelUpDamageValue;
 	Bullet.Parts = EPartsName::Bullet;
 	
 	Magazine.Name = "Magazine";
 	Magazine.Level = 1;
-	Magazine.Value = 0;
+	Magazine.Value = ReloadTime*LevelUpReloadValue;
 	Magazine.Parts = EPartsName::Magazine;
 	
 	Scope.Name = "Scope";
 	Scope.Level = 1;  
-	Scope.Value = 0;  
+	Scope.Value = SpreadAngleDegrees*LevelUpScopeValue;  
 	Scope.Parts = EPartsName::Scope;
 	
 	Handle.Name = "Handle";
 	Handle.Level = 1;
-	Handle.Value = 0;
+	Handle.Value = Recoil* LevelUpHandleValue;
 	Handle.Parts = EPartsName::Handle;
 }
 

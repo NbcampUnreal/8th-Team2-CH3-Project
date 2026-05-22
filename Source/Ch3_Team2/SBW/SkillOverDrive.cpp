@@ -5,10 +5,16 @@
 
 void USkillOverDrive::ActiveSkill()
 {
-	if (SkillActiveCheck == false) return;
-	
+	Super::ActiveSkill();
+	if (bSkillActiveCheck == false)
+	{
+		return;
+	}
 	AAPlayer* PlayerOwner = Cast<AAPlayer>(GetOwner());
-	if (!PlayerOwner) return;
+	if (!PlayerOwner)
+	{
+		return;
+	}
 
 	if (PlayerOwner->ChildActor)
 	{
@@ -18,13 +24,13 @@ void USkillOverDrive::ActiveSkill()
 		{
 			//float CurrentSpeed = GetOwner()->GetActorSpeed();
 			SaveReload = CachedGun->GetReloadSpeed();
-			CachedGun->AddReloadStat(SaveReload * Percent);
+			SaveReload =SaveReload * Percent - SaveReload;
+			CachedGun->AddReloadStat(SaveReload);
 			
 			SaveSpeed = PlayerOwner->GetSpeed();
-			float Test = SaveSpeed * Percent;
- 			PlayerOwner->AddPlayerSpeed(Test);
-			SkillActiveCheck = false;
-			
+			SaveSpeed = SaveSpeed * Percent - SaveSpeed;
+ 			PlayerOwner->AddPlayerSpeed(SaveSpeed);
+			bSkillActiveCheck = false;
 
 			// 타이머 설정
 			GetWorld()->GetTimerManager().SetTimer(
@@ -36,22 +42,24 @@ void USkillOverDrive::ActiveSkill()
 			);
 		}
 	}
-	Super::ActiveSkill();
 }
 
 void USkillOverDrive::EndSkill()
 {
-	AAPlayer* PlayerOwner = Cast<AAPlayer>(GetOwner());
-	if (!PlayerOwner) return;
-
 	GetWorld()->GetTimerManager().ClearTimer(SkillTimerHandle);
+	AAPlayer* PlayerOwner = Cast<AAPlayer>(GetOwner());
+	if (!PlayerOwner)
+	{
+		return;
+	}
+
 	AGunBase* CachedGun = Cast<AGunBase>(PlayerOwner->ChildActor->GetChildActor());
 	if (CachedGun)
 	{
 		// [스탯 원상 복구]
-		PlayerOwner->AddPlayerSpeed(SaveSpeed - PlayerOwner->GetSpeed());
-		CachedGun->AddReloadStat(SaveReload - CachedGun->GetReloadSpeed()); 
+		PlayerOwner->AddPlayerSpeed(-SaveSpeed);
+		CachedGun->AddReloadStat(-SaveReload); 
 	}
 	CachedGun = nullptr;
-	SkillActiveCheck= true;
+	bSkillActiveCheck= true;
 }

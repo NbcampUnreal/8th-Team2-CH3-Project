@@ -89,4 +89,5 @@ DerivedDataCache/*
 *.DotSettings.user
 
 
-# Rider auto-generated plugin /Plugins/Developer/RiderLink/
+# Rider auto-generated plugin
+/Plugins/Developer/RiderLink/

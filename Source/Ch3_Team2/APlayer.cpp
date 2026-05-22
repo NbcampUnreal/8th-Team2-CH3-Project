@@ -44,6 +44,8 @@ AAPlayer::AAPlayer()
 	
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 	
+	
+	
 	CurrentTargetStructure = nullptr;
 }
 
@@ -51,9 +53,13 @@ void AAPlayer::BeginPlay()
 {
 	
 	Super::BeginPlay();
+	
 	MagnetComp->SetSphereRadius(MagnetRadius);
 	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
-	// [추가] 게임 시작 직후, 기본 내장 Mesh의 PistolSocket 위치에 무기를 강제로 붙입니다.
+	
+	PController = Cast<APlayerController>(GetController());
+	EquipedGun = Cast<AGunBase>(ChildActor->GetChildActor());
+	
 	if (ChildActor && GetMesh())
 	{
 		ChildActor->AttachToComponent(
@@ -92,84 +98,73 @@ void AAPlayer::Look(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 		
-		// [수정] 유저가 마우스를 움직이면, 현재 컨트롤러가 바라보는 실제 시선을 
-		// 복구 타겟으로 실시간 갱신해줍니다. 
-		// 이렇게 하면 복구 로직이 유저의 마우스 조작을 방해하며 강제로 끌고 가지 않습니다.
-		if (bIsRecoveringRecoil)
+		if (PController && bIsRecoveringRecoil)
 		{
-			if (APlayerController* PC = Cast<APlayerController>(GetController()))
-			{
-				// 현재 마우스 입력이 반영된 최종 회전값을 타겟으로 동기화
-				UpRecoilTargetRotation = PC->GetControlRotation();
+			// 현재 마우스 입력이 반영된 최종 회전값을 타겟으로 동기화
+			UpRecoilTargetRotation = PController->GetControlRotation();
              
-				// 만약 마우스를 아래로 크게 내려서 이미 원래 쐈던 위치보다 더 내려갔다면 복구를 종료합니다.
-				bIsRecoveringRecoil = false;
-			}
+			// 만약 마우스를 아래로 크게 내려서 이미 원래 쐈던 위치보다 더 내려갔다면 복구를 종료합니다.
+			bIsRecoveringRecoil = false;
 		}
 	}
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	if (ChildActor)
+	if (EquipedGun->CheckReload())
 	{
-		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
-		if (Gun->CheckReload())
+		// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
+		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+		// 2. 애님 인스턴스와 우리가 에디터에서 등록할 몽타주 에셋이 모두 안전하게 존재할 때만 실행합니다.
+		if (AnimInstance && ReloadMontage)
 		{
-			// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
-			UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-			// 2. 애님 인스턴스와 우리가 에디터에서 등록할 몽타주 에셋이 모두 안전하게 존재할 때만 실행합니다.
-			if (AnimInstance && ReloadMontage)
+			if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
 			{
-				if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
-				{
-					// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
-					AnimInstance->Montage_Play(ReloadMontage, Gun->GetReloadSpeed());
-				}
+				// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
+				AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
 			}
 		}
 	}
 }
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
-	if (ChildActor)
+	if (EquipedGun->CheckAmmo())
 	{
-		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
-		if (Gun->CheckAmmo())
+		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+		if (AnimInstance && ShootMontage)
 		{
-			UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-			if (AnimInstance && ShootMontage)
+			if (!AnimInstance->Montage_IsPlaying(ShootMontage))
 			{
-				if (!AnimInstance->Montage_IsPlaying(ShootMontage))
+				// 2. [블루프린트 완벽 재현] 카메라의 위치와 정면 방향 벡터를 구합니다.
+				FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
+				FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+				// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
+				AnimInstance->Montage_Play(ShootMontage, 1.0f);
+				EquipedGun->Fire_Gun(CameraLocation,CameraForward);
+				// 2. 무기로부터 '파츠 스탯이 적용된 최종 반동 값'을 전달받음
+				float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
+				RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			
+				// 3. 카메라 반동 제어 처리
+				if (PController)
 				{
-					// 2. [블루프린트 완벽 재현] 카메라의 위치와 정면 방향 벡터를 구합니다.
-					FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
-					FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
-					// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
-					AnimInstance->Montage_Play(ShootMontage, 1.0f);
-					Gun->Fire_Gun(CameraLocation,CameraForward);
-					// 2. 무기로부터 '파츠 스탯이 적용된 최종 반동 값'을 전달받음
-					float FinalRecoilPitch = Gun->GetCurrentRecoilPitch();
-                
-					// 3. 카메라 반동 제어 처리
-					if (APlayerController* PC = Cast<APlayerController>(GetController()))
+					// ★ 이미 복구(연사) 중이 아닐 때만 '최초 원래 조준선'을 기억합니다.
+					if (!bIsRecoveringRecoil)
 					{
-						// [수정] 1. 총을 쏘기 직전, 복구해야 할 '원래 조준선 위치'를 저장합니다.
-						UpRecoilTargetRotation = PC->GetControlRotation();
-						
-						TargetRotation = PC->GetControlRotation();
-						
-						FRotator RecoilRot = TargetRotation;
-						// 무기가 넘겨준 최종 반동 값을 더해줌
-						RecoilRot.Pitch += FinalRecoilPitch; 
-						PC->SetControlRotation(RecoilRot);
-						
-						// 3. 반동 복구 로직을 활성화합니다.
-						bIsRecoveringRecoil = true;
+						UpRecoilTargetRotation = PController->GetControlRotation();
 					}
+				
+					TargetRotation = PController->GetControlRotation();
+				
+					FRotator RecoilRot = TargetRotation;
+					// 무기가 넘겨준 최종 반동 값을 더해줌
+					RecoilRot.Pitch += FinalRecoilPitch; 
+					PController->SetControlRotation(RecoilRot);
+				
+					// 3. 반동 복구 로직을 활성화합니다.
+					bIsRecoveringRecoil = true;
 				}
 			}
 		}
@@ -197,17 +192,18 @@ void AAPlayer::Tick(float DeltaTime)
 	// 반동 복구 상태일 때만 작동
 	if (bIsRecoveringRecoil)
 	{
-		if (APlayerController* PC = Cast<APlayerController>(GetController()))
+		if (PController)
 		{
-			FRotator CurrentRotation = PC->GetControlRotation();
+			FRotator CurrentRotation = PController->GetControlRotation();
 
 			// RInterpTo를 사용해 현재 회전값에서 목표 회전값(원래 쐈던 곳)으로 부드럽게 이동합니다.
 			FRotator NewRotation = FMath::RInterpTo(CurrentRotation, UpRecoilTargetRotation, DeltaTime, RecoilRecoverySpeed);
-            
-			PC->SetControlRotation(NewRotation);
+			float DeltaPitch = NewRotation.Pitch - CurrentRotation.Pitch;
+			PController->SetControlRotation(NewRotation);
+			RecoilRecoveryRotation -= DeltaPitch;
 
 			// 현재 회전값과 목표 회전값의 차이가 거의 없다면 복구를 종료합니다 (에러 방지 및 최적화)
-			if (FMath::IsNearlyEqual(CurrentRotation.Pitch, UpRecoilTargetRotation.Pitch, 0.05f))
+			if (FMath::IsNearlyEqual(CurrentRotation.Pitch, UpRecoilTargetRotation.Pitch, 0.05f) && RecoilRecoveryRotation <= 0)
 			{
 				bIsRecoveringRecoil = false;
 			}
@@ -305,9 +301,12 @@ void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Cr
 {
 	if (ChildActor)
 	{
-		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
-		if (!Gun) return;
-		Gun->AddDamage(AddRelicBonus,TotalBonus,Critical);
+		
+		if (!EquipGun)
+		{
+			return;
+		}
+		EquipGun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 	}
 }
 void AAPlayer::AddExp(int32 Add_Exp)
@@ -348,28 +347,17 @@ void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
 
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
-	if (ChildActor)
+	if (ChildActor && EquipGun)
 	{
-		// 1. 현재 들고 있는 무기 액터를 가져와 AGunBase로 형변환
-		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
-		if (Gun)
-		{
-			// 2. 무기의 파츠 업그레이드 함수 실행
-			Gun->SelectParts(PartsType);
-		}
+		EquipGun->SelectParts(PartsType);
 	}
 }
 
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
-	if (ChildActor)
+	if (ChildActor && EquipGun)
 	{
-		AGunBase* Gun = Cast<AGunBase>(ChildActor->GetChildActor());
-		if (Gun)
-		{
-			// 무기가 가진 파츠 정보를 UI단으로 그대로 토스합니다.
-			return Gun->GetPartsData(PartsType);
-		}
+		return EquipGun->GetPartsData(PartsType);
 	}
     
 	// 무기가 없다면 텅 빈 구조체 반환
