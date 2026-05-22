@@ -74,12 +74,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
 	float ReloadTime = 1.2f;
 	
-	// 집탄률	
+	// 집탄률
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
 	float SpreadAngleDegrees = 12.0f;
 	
 	// 현제 장전 여부
-	bool bReloadingCheck = false;
+	bool ReloadingCheck = false;
 	// 장전 TimeHandle
 	FTimerHandle TimeReloadDelay;
 	

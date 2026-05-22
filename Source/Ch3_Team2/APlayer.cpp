@@ -41,7 +41,11 @@ AAPlayer::AAPlayer()
 	MagnetComp->SetupAttachment(RootComponent);
 	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
 	DropExpComp->SetupAttachment(MagnetComp);
+	
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+	
+	
+	
 	CurrentTargetStructure = nullptr;
 }
 
@@ -109,7 +113,7 @@ void AAPlayer::Look(const FInputActionValue& Value)
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	if (EquipedGun->CanReload())
+	if (EquipedGun->CheckReload())
 	{
 		// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
@@ -126,30 +130,40 @@ void AAPlayer::Reload(const FInputActionValue& Value)
 }
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
-	if (EquipedGun->HasAmmo())
+	if (EquipedGun->CheckAmmo())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 		if (AnimInstance && ShootMontage)
 		{
 			if (!AnimInstance->Montage_IsPlaying(ShootMontage))
 			{
+				// 2. [블루프린트 완벽 재현] 카메라의 위치와 정면 방향 벡터를 구합니다.
 				FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
 				FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+				// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
 				AnimInstance->Montage_Play(ShootMontage, 1.0f);
-				EquipedGun->FireGun(CameraLocation,CameraForward);
+				EquipedGun->Fire_Gun(CameraLocation,CameraForward);
+				// 2. 무기로부터 '파츠 스탯이 적용된 최종 반동 값'을 전달받음
 				float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
 				RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
 			
+				// 3. 카메라 반동 제어 처리
 				if (PController)
 				{
+					// ★ 이미 복구(연사) 중이 아닐 때만 '최초 원래 조준선'을 기억합니다.
 					if (!bIsRecoveringRecoil)
 					{
 						UpRecoilTargetRotation = PController->GetControlRotation();
 					}
+				
 					TargetRotation = PController->GetControlRotation();
+				
 					FRotator RecoilRot = TargetRotation;
+					// 무기가 넘겨준 최종 반동 값을 더해줌
 					RecoilRot.Pitch += FinalRecoilPitch; 
 					PController->SetControlRotation(RecoilRot);
+				
+					// 3. 반동 복구 로직을 활성화합니다.
 					bIsRecoveringRecoil = true;
 				}
 			}
@@ -175,23 +189,21 @@ void AAPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
+	// 반동 복구 상태일 때만 작동
 	if (bIsRecoveringRecoil)
 	{
 		if (PController)
 		{
 			FRotator CurrentRotation = PController->GetControlRotation();
-			FRotator NewRotation = FMath::RInterpTo(
-				CurrentRotation,
-				UpRecoilTargetRotation,
-				DeltaTime,
-				RecoilRecoverySpeed);
+
+			// RInterpTo를 사용해 현재 회전값에서 목표 회전값(원래 쐈던 곳)으로 부드럽게 이동합니다.
+			FRotator NewRotation = FMath::RInterpTo(CurrentRotation, UpRecoilTargetRotation, DeltaTime, RecoilRecoverySpeed);
 			float DeltaPitch = NewRotation.Pitch - CurrentRotation.Pitch;
 			PController->SetControlRotation(NewRotation);
 			RecoilRecoveryRotation -= DeltaPitch;
-			if (FMath::IsNearlyEqual(
-				CurrentRotation.Pitch,
-				UpRecoilTargetRotation.Pitch,
-				0.05f) && RecoilRecoveryRotation <= 0)
+
+			// 현재 회전값과 목표 회전값의 차이가 거의 없다면 복구를 종료합니다 (에러 방지 및 최적화)
+			if (FMath::IsNearlyEqual(CurrentRotation.Pitch, UpRecoilTargetRotation.Pitch, 0.05f) && RecoilRecoveryRotation <= 0)
 			{
 				bIsRecoveringRecoil = false;
 			}
@@ -209,6 +221,8 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
+
+	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -248,6 +262,7 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
+	// Test Log
 	UE_LOG(LogTemp, Warning, TEXT("Current HP: %d , Add HP: %d"),CurrentHp, Add_Hp);
 	if (CurrentHp + Add_Hp >= MaxHp)
 	{
@@ -268,13 +283,16 @@ void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 }
 void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
+	// 캐릭터 무브먼트 컴포넌트를 가져옵니다.
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp)
 	{
 		if (MoveSpeed + Add_Speed > 0.0f )
 		{
 			MoveSpeed += Add_Speed;
+			// 실제 최대 이동 속도를 더해줍니다.
 			MoveComp->MaxWalkSpeed = MoveSpeed;
+			// 내 스탯 변수에도 동기화하고 싶다면 같이 업데이트
 			
 		}
 	}
@@ -294,19 +312,24 @@ void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Cr
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
-	 if (Exp >= LevelUpExp &&Level < MaxLevel)
+	// Levelup경험치 초과시 
+	// 레벨업 + 경험치 초기화
+	// 만약  Lvelup 시 레벨업 경험치 증가시 따로 추가할 것
+	 if (Exp >= LevelUpExp)
 	 {
+	 	if (Level < MaxLevel)
+	 	{
 	 		Exp -= LevelUpExp;
 	 		LevelUpStat();
-		 }
+	 	}
+	 }
 }
 void AAPlayer::LevelUpStat()
 {
-	AddMaxHp(MaxHPIncrease);	
-	CurrentHp = MaxHp;
+	MaxHp += MaxHPIncrease;
 	++Level;
 	// 여기 매직넘버는 추후 수정 예정
-	LevelUpExp =FMath::RoundToInt32(200.0f * FMath::Pow(1.35f, Level));
+	LevelUpExp =static_cast<int>(200 * pow(1.35, Level));
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveSpeed += SpeedIncrease;
@@ -344,7 +367,7 @@ FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
-	CurrentHp = FMath::Clamp(CurrentHp, 0, MaxHp);
+	CurrentHp = FMath::Clamp(CurrentHp, 0.f, MaxHp);
 	
 	UE_LOG(LogTemp, Warning,
 		TEXT("Player Hit! Damage: %f CurrentHP: %d"),
@@ -361,9 +384,6 @@ float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 
 void AAPlayer::OnDeath()
 {
-	// 부활  - bool 값 이 true인지 확인해서 
-	// true 이면 부활 하도록 로그 수정하기
-	//if ()
 	// 사망 로그 호출
 	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
 }

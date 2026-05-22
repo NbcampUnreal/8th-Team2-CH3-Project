@@ -13,16 +13,15 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 	GENERATED_BODY()
 
 public:
-	
-	
+	AGunBase();
 	void InitializeParts();
-	bool HasAmmo();
-	bool CanReload();
+	bool CheckAmmo();
+	bool CheckReload();
 	
 	UFUNCTION(BlueprintCallable)
 	void Reloading();
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	virtual void FireGun(FVector Location, FVector Direction);
+	virtual void Fire_Gun(FVector Location, FVector Direction);
 	
 	// RPM ( 연사 속도 )시간 끝내는함수 
 	void HandleFireDelay();
@@ -35,7 +34,7 @@ public:
 	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
 	
 	float GetReloadSpeed(){return ReloadTime;}
-	void DegreaseReloadTimeStat(float AddReload);
+	void AddReloadStat(float AddReload);
 	
 	void AddCritical(float Critical){CritMultiplier += Critical;}
 	

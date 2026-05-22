@@ -6,9 +6,9 @@
 #include "public/MonsterBase.h"
 #include "DrawDebugHelpers.h"
 
-bool AGunBase::HasAmmo()
+bool AGunBase::CheckAmmo()
 {
-	if (CanFire && bReloadingCheck == false && CurrentAmmo > 0)
+	if (CanFire && ReloadingCheck == false && CurrentAmmo > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerFireDelay
@@ -23,32 +23,48 @@ bool AGunBase::HasAmmo()
 	}
 	return false;
 }
-bool AGunBase::CanReload()
+AGunBase::AGunBase()
+{
+	
+}
+bool AGunBase::CheckReload()
 {
 	// 총알이 가득 차있을 떄 
-	if (CurrentAmmo < MaxAmmo && bReloadingCheck == false )
+	if (CurrentAmmo < MaxAmmo && ReloadingCheck == false )
 	{
-		bReloadingCheck = true;
+		ReloadingCheck = true;
 		return true;
 	}
 	return false;
 }
+
 void AGunBase::Reloading()
 {
 	// 재장전 되었을 떄 
-	bReloadingCheck = false;
+	ReloadingCheck = false;
 	CurrentAmmo = MaxAmmo;
+	UE_LOG(LogTemp, Log, TEXT("Reloading!!!!"));
+	
 }
-void AGunBase::FireGun(FVector Location, FVector Direction)
+
+void AGunBase::Fire_Gun(FVector Location, FVector Direction)
 {
+	// 1. 끝점 계산
+	//FVector End = Location + (Direction * EffectiveRange);
+	// 여기서 원래 똑바르던 Direction이 무작위로 튄 SpreadDirection으로 재탄생합니다.
 	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SpreadAngleDegrees ));
+
+	// [단계 2] 최종 도착점(End) 계산
+	// 원래 Direction 대신, 탄퍼짐이 적용된 SpreadDirection을 사거리에 곱해 최종 목적지를 구합니다.
 	FVector End = Location + (SpreadDirection * EffectiveRange);
 
+	// 2. 파라미터 설정
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);           // 자기 자신 제외
 	Params.AddIgnoredActor(GetOwner());    // 소유자(예: 캐릭터) 제외
 
+	// 3. Line Trace 실행
 	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Location,
@@ -56,6 +72,7 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 		ECC_Visibility, // 블루프린트의 Visibility 채널
 		Params
 	);
+	
 	FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
 	
 	DrawDebugLine(
@@ -68,6 +85,7 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 		0,                  // 우선순위
 		0.1f  //두께
 	);
+
 	if (bHit)
 	{
 		BattleIn(HitResult);
@@ -94,9 +112,11 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 		CritMultiplier
 	);
 }
+
 void AGunBase::HandleFireDelay()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
+
 	CanFire = true;
 }
 
@@ -108,28 +128,44 @@ void AGunBase::AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Criti
 	CritMultiplier += Critical;
 	FinalDamage = (BaseDamage * (1 + Bullet.Value )+ RelicBonus ) * TotalBonus;
 }
+
 void AGunBase::SelectParts(EPartsName parts)
 {
-	if (parts == EPartsName::Bullet && Bullet.Level < MaxLevelParts)
+	switch (parts)
 	{
-		++Bullet.Level;
-		Bullet.Value += LevelUpDamageValue;
-		AddDamage(0,0,0);
-	}
-	else if (parts == EPartsName::Magazine && Magazine.Level < MaxLevelParts)
-	{
-		++Scope.Level;
-		SpreadAngleDegrees -= Scope.Value;
-	}
-	else if (parts == EPartsName::Scope && Scope.Level < MaxLevelParts)
-	{
-		++Handle.Level;
-		Recoil -= Handle.Value; 
-	}
-	else if (parts == EPartsName::Handle && Handle.Level < MaxLevelParts)
-	{
-		++Magazine.Level;
-		ReloadTime -= Magazine.Value;
+	case EPartsName::Bullet:
+		if (Bullet.Level < MaxLevelParts)
+		{
+			++Bullet.Level;
+			Bullet.Value += LevelUpDamageValue;
+		}
+		break;
+	case EPartsName::Scope:
+		if (Scope.Level < MaxLevelParts)
+		{
+			++Scope.Level;
+			SpreadAngleDegrees -= Scope.Value;
+		}
+		break;
+	case EPartsName::Handle:
+		if (Handle.Level < MaxLevelParts)
+		{
+			++Handle.Level;
+			Recoil -= Handle.Value; 
+		}
+		break;
+	case EPartsName::Magazine:
+		if (Magazine.Level < MaxLevelParts)
+		{
+			++Magazine.Level;
+			ReloadTime -= Magazine.Value;
+		}
+		break;
+	default:
+		{
+			
+		break;
+		}
 	}
 }
 
@@ -153,25 +189,24 @@ FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 		{
 			return Handle;
 		}
-	default:
-		{
-			
+	default:                   
 		return FGunParts();
-		}
 	}
 }
-void AGunBase::DegreaseReloadTimeStat(float AddReload)
+
+void AGunBase::AddReloadStat(float AddReload)
 {
 	if (ReloadTime + AddReload >= 0.1f)
 	{
 		ReloadTime += AddReload;
 	}
 }
+
 void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
-	Bullet.Level = 0;
-	Bullet.Value = 0;
+	Bullet.Level = 1;
+	Bullet.Value = LevelUpDamageValue;
 	Bullet.Parts = EPartsName::Bullet;
 	
 	Magazine.Name = "Magazine";
@@ -180,15 +215,16 @@ void AGunBase::InitializeParts()
 	Magazine.Parts = EPartsName::Magazine;
 	
 	Scope.Name = "Scope";
-	Scope.Level = 0;  
+	Scope.Level = 1;  
 	Scope.Value = SpreadAngleDegrees*LevelUpScopeValue;  
 	Scope.Parts = EPartsName::Scope;
 	
 	Handle.Name = "Handle";
-	Handle.Level = 0;
+	Handle.Level = 1;
 	Handle.Value = Recoil* LevelUpHandleValue;
 	Handle.Parts = EPartsName::Handle;
 }
+
 float AGunBase::GetCurrentRecoilPitch() const
 {
 	// 핸들 파츠의 Value가 반동 감소율(예: 0.2 -> 20% 감소)이라면 아래와 같이 계산
@@ -199,7 +235,7 @@ float AGunBase::GetCurrentRecoilPitch() const
 
 void AGunBase::BeginPlay()
 {
+	Super::BeginPlay();
+
 	InitializeParts();
-	AddDamage(0,0,0);
-	
 }

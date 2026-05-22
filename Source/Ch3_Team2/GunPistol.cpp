@@ -1,7 +1,7 @@
 #include "GunPistol.h"
-void AGunPistol::FireGun(FVector Location, FVector Direction)
+void AGunPistol::Fire_Gun(FVector Location, FVector Direction)
 {
 	// 발사	
 	CurrentAmmo -= 1;
-	Super::FireGun(Location, Direction);
+	Super::Fire_Gun(Location, Direction);
 }

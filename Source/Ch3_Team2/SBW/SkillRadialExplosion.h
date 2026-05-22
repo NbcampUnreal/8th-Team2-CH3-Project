@@ -6,6 +6,11 @@
 #include "SkillBaseComp.h"
 #include "SkillRadialExplosion.generated.h"
 
+/**
+ * 
+ */
+class UCollisionCompoent;
+
 UCLASS()
 class CH3_TEAM2_API USkillRadialExplosion : public USkillBaseComp
 {

@@ -15,8 +15,6 @@ public:
 	float SaveReload = 0.0f;
 	
 	
-	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
 	virtual void ActiveSkill()override;
 	void EndSkill();
 };
