@@ -13,15 +13,12 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 	GENERATED_BODY()
 
 public:
-	
-	
 	void InitializeParts();
 	bool HasAmmo();
 	bool CanReload();
 	
 	UFUNCTION(BlueprintCallable)
 	void Reloading();
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void FireGun(FVector Location, FVector Direction);
 	
 	// RPM ( 연사 속도 )시간 끝내는함수 
@@ -30,24 +27,26 @@ public:
 	
 	void BattleIn(const FHitResult& HitResult);
 	
-	int32 GetCurrentAmmo(){return CurrentAmmo;}
-	int32 GetMaxAmmo(){return MaxAmmo;}
-	float GetReloadSpeed(){return ReloadTime;}
+	void UpdateWeaponStats();
 	
 	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
 	void AddCritical(float Critical){CritMultiplier += Critical;}
 	
-	void DegreaseReloadTimeStat(float AddReload);
+	void DecreaseReloadTimeStat(float AddReload);
 	//set
 	void SetBulletLevel(int32 Level){Bullet.Level = Level;}
 	void SetMagazineLevel(int32 Level){Magazine.Level = Level;}
 	void SetScopeLevel(int32 Level){Scope.Level = Level;}
 	void SetHandleLevel(int32 Level){Handle.Level = Level;}
 	//get
-	int32 GetHandleLevel(){return Handle.Level;}
-	int32 GetScopeLevel(){return Scope.Level;}
-	int32 GetMagazineLevel(){return Magazine.Level;}
-	int32 GetBulletLevel(){return Bullet.Level;}
+	int32 GetCurrentAmmo()const{return CurrentAmmo;}
+	int32 GetMaxAmmo()const{return MaxAmmo;}
+	float GetReloadSpeed()const{return ReloadTime;}
+	
+	int32 GetHandleLevel()const{return Handle.Level;}
+	int32 GetScopeLevel()const{return Scope.Level;}
+	int32 GetMagazineLevel()const{return Magazine.Level;}
+	int32 GetBulletLevel()const{return Bullet.Level;}
 	//const
 	const int32 MaxLevelParts = 4;
 	const float LevelUpDamageValue = 0.25f;
@@ -56,7 +55,7 @@ public:
 	const float LevelUpHandleValue =0.2f;
 	
 	// 집탄률
-	float SpredAngle = 0;
+	float SpreadAngle = 0;
 	float ActiveRecoil = 0;
 	float ActiveReload = 0;
 	

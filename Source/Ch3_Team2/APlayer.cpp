@@ -3,8 +3,6 @@
 
 #include "APlayer.h"
 
-#include <rapidjson/internal/ieee754.h>
-
 #include "SkillBaseComp.h"
 
 #include "Animation/AnimInstance.h"
@@ -109,6 +107,7 @@ void AAPlayer::Look(const FInputActionValue& Value)
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
+	
 	if (EquipedGun->CanReload())
 	{
 		// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
@@ -126,7 +125,7 @@ void AAPlayer::Reload(const FInputActionValue& Value)
 }
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
-	if (EquipedGun->HasAmmo())
+	if (EquipedGun && EquipedGun->HasAmmo())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 		if (AnimInstance && ShootMontage)
@@ -137,6 +136,7 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 				FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
 				AnimInstance->Montage_Play(ShootMontage, 1.0f);
 				EquipedGun->FireGun(CameraLocation,CameraForward);
+				
 				float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
 				RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
 			
@@ -145,9 +145,11 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 					if (!bIsRecoveringRecoil)
 					{
 						UpRecoilTargetRotation = PController->GetControlRotation();
+						SetActorTickEnabled(true);
+
 					}
 					TargetRotation = PController->GetControlRotation();
-					FRotator RecoilRot = TargetRotation;
+					FRotator RecoilRot = TargetRotation	;
 					RecoilRot.Pitch += FinalRecoilPitch; 
 					PController->SetControlRotation(RecoilRot);
 					bIsRecoveringRecoil = true;
@@ -185,15 +187,19 @@ void AAPlayer::Tick(float DeltaTime)
 				UpRecoilTargetRotation,
 				DeltaTime,
 				RecoilRecoverySpeed);
+			
 			float DeltaPitch = NewRotation.Pitch - CurrentRotation.Pitch;
 			PController->SetControlRotation(NewRotation);
 			RecoilRecoveryRotation -= DeltaPitch;
+			
 			if (FMath::IsNearlyEqual(
 				CurrentRotation.Pitch,
 				UpRecoilTargetRotation.Pitch,
 				0.05f) && RecoilRecoveryRotation <= 0)
 			{
 				bIsRecoveringRecoil = false;
+				SetActorTickEnabled(true);
+				
 			}
 		}
 	}
@@ -222,28 +228,30 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
-		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAPlayer::Move);
 
-		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AAPlayer::Look);
 		
-		//Skill Activing
 		EnhancedInputComponent->BindAction(SkillActive, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
 		
-		//Reload Activing
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AAPlayer::Reload);
 		
-		// Shoot Actiiving
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AAPlayer::Shooting);
 		
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAPlayer::Interact);
 		
 	}
+}
+
+void AAPlayer::LoadData(int32 GetLevel)
+{
+	CurrentLevel = GetLevel;
+	AddMaxHp(0);
+	AddPlayerSpeed(0);
 }
 
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
@@ -260,12 +268,12 @@ void AAPlayer::AddCurrentHp(int32 Add_Hp)
 		UE_LOG(LogTemp, Warning, TEXT("Current HP: %d"),CurrentHp);
 	}
 }
-
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
 	if (MaxHp + Add_Max_Hp >= 0)
 	{
-		MaxHp = BaseMaxHp + Level* MaxHPIncrease + Add_Max_Hp;
+		RelicBonusHp += Add_Max_Hp;
+		MaxHp = BaseMaxHp + CurrentLevel* MaxHPIncrease + RelicBonusHp;
 		CurrentHp += Add_Max_Hp;
 	}
 }
@@ -273,15 +281,24 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp)
-	{
+	{	
 		if (MoveSpeed + Add_Speed > 0.0f )
 		{
 			// Relic Speed는 RelicEffectBase 수정될 떄까지 일단 킵
-			RelicBonusHp += Add_Speed;
-			MoveSpeed = BaseMoveSpeed + Level*SpeedIncrease + RelicBonusHp; 
+			RelicBonusSpeed += Add_Speed;
+			MoveSpeed = BaseMoveSpeed + CurrentLevel*SpeedIncrease + RelicBonusSpeed; 
 			MoveComp->MaxWalkSpeed = MoveSpeed;
 			
 		}
+	}
+}
+void AAPlayer::AddExp(int32 Add_Exp)
+{
+	Exp += Add_Exp;
+	if (Exp >= LevelUpExp &&CurrentLevel < MaxLevel)
+	{
+		Exp -= LevelUpExp;
+		LevelUpStat();
 	}
 }
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
@@ -295,21 +312,12 @@ void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Cr
 		EquipedGun->AddDamage(AddRelicBonus,TotalBonus,Critical);
 	}
 }
-void AAPlayer::AddExp(int32 Add_Exp)
-{
-	Exp += Add_Exp;
-	 if (Exp >= LevelUpExp &&Level < MaxLevel)
-	 {
-	 		Exp -= LevelUpExp;
-	 		LevelUpStat();
-		 }
-}
 void AAPlayer::LevelUpStat()
 {
 	AddMaxHp(0);	
 	CurrentHp = MaxHp;
-	++Level;
-	LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, Level));
+	++CurrentLevel;
+	LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 	AddPlayerSpeed(0);
 }
 void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
@@ -317,18 +325,16 @@ void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
 	if (SkillInstance)
 	{
 		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		Skill->DecreaseTimeSkill(SkillCoolTime);
+		Skill->	DecreaseTimeSkill(SkillCoolTime);
 	}
 }
-
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
 	if (ChildActor && EquipedGun)
 	{
 		EquipedGun->SelectParts(PartsType);
 	}
-}
-
+}		
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
 	if (ChildActor && EquipedGun)
@@ -338,8 +344,7 @@ FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
     
 	// 무기가 없다면 텅 빈 구조체 반환
 	return FGunParts();
-}
-
+}	
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
@@ -357,7 +362,6 @@ float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 
 	return DamageAmount;
 }
-
 void AAPlayer::OnDeath()
 {
 	// 부활  - bool 값 이 true인지 확인해서 

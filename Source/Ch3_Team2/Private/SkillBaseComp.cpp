@@ -8,7 +8,8 @@ USkillBaseComp::USkillBaseComp()
 void USkillBaseComp::BeginPlay()
 {
 	Super::BeginPlay();
-	PrimaryComponentTick.bStartWithTickEnabled = false;
+	SetComponentTickEnabled(false);
+	CurrentSkillCoolTime = 0.0f;
 }
 void USkillBaseComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -37,11 +38,6 @@ void USkillBaseComp::CoolDownSkill(float DeltaTime)
 
 void USkillBaseComp::DecreaseTimeSkill(float Decrease)
 {
-	if (SkillCoolTime - Decrease > MinimumSkillTime)
-	{
-		SkillCoolTime-=Decrease;
-		if (SkillCoolTime <= MinimumSkillTime)
-			SkillCoolTime = MinimumSkillTime;
-	}
+	SkillCoolTime = FMath::Max(SkillCoolTime - Decrease, MinimumSkillTime);
 }
 
