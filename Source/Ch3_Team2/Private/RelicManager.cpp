@@ -10,37 +10,18 @@ ARelicManager::ARelicManager()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
-{
-	if (NewRelic.RelicId == 0) return;
-	
-	UE_LOG(LogTemp, Warning,TEXT("Relic Selected : %s"), *NewRelic.RelicName.ToString());
-	OwnedRelics.Add(NewRelic);
-	RandomRelicOption.Empty();
-	
-	if (NewRelic.Grade == ERelicGrade::Epic || NewRelic.Grade == ERelicGrade::Legendary)
-	{
-		BlockedRelicIDs.Add(NewRelic.RelicId);
-	}
-	
-	if (!NewRelic.EffectClass) return;
-	
-	URelicEffectBase* Effect = NewObject<URelicEffectBase>(this, NewRelic.EffectClass);
-	AAPlayer* Player =
-	Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	
-	if (Effect)
-	{
-		Effect->ApplyRelic(Player,NewRelic);
-	}
-}
 
 void ARelicManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	ApplyManager = GetWorld()->SpawnActor<ARelicApplyManager>(ApplyManagerClass);
+	
+	if (!ApplyManager) return;
+	
 	RandomRelicOption.Empty();
 	AllRelics.Empty();
+	OwnedRelicIDs.Empty();
 
 	if (!RelicDataTable) return;
 	
@@ -58,6 +39,24 @@ void ARelicManager::BeginPlay()
 		
 		AllRelics.Add(*RelicPtr);
 	}
+}
+
+void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
+{
+	if (NewRelic.RelicId == 0) return;
+	
+	UE_LOG(LogTemp, Warning,TEXT("Relic Selected : %s"), *NewRelic.RelicName.ToString());
+	
+	OwnedRelicIDs.Add({NewRelic.RelicId, false});
+	
+	RandomRelicOption.Empty();
+	
+	if (NewRelic.Grade == ERelicGrade::Epic || NewRelic.Grade == ERelicGrade::Legendary)
+	{
+		BlockedRelicIDs.Add(NewRelic.RelicId);
+	}
+	
+	ApplyManager->ApplyRelicById(OwnedRelicIDs);
 }
 
 ERelicGrade ARelicManager::NormalRollGrade()
@@ -140,4 +139,20 @@ void ARelicManager::OnEliteMonsterDead()
 	{
 		OnRelicRewardGenerated.Broadcast(RandomRelicOption);
 	}
+}
+
+void ARelicManager::TossRelicIDs(const TArray<int32>& SaveRelicIDs)
+{
+	if (SaveRelicIDs.Num() == 0)
+	{
+		return;
+	}
+	
+	OwnedRelicIDs.Empty();
+	
+	for (int32 RelicID : SaveRelicIDs)
+	{
+		OwnedRelicIDs.Add({RelicID, false});
+	}
+	
 }
