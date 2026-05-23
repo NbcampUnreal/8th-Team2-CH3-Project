@@ -18,7 +18,7 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "HealTotem.h"
+#include "Prop/HealTotem.h"
 
 // Sets default values
 AAPlayer::AAPlayer()
