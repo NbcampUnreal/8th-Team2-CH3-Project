@@ -1,9 +1,40 @@
 #include "Battle/BattleSubsystem.h"
+#include "APlayer.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/Engine.h"
 #include "MonsterTypes.h"
 #include "MonsterBase.h"
 #include "MonsterStatComponent.h"
+#include "Data/MasterSubsystem.h"
+#include "Kismet/GameplayStatics.h"
+
+void UBattleSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Collection.InitializeDependency<UMasterSubsystem>();
+
+	Super::Initialize(Collection);
+	
+	if (GetGameInstance())
+	{
+		if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+		{
+			MasterSubsystem->OnGameEnd.AddDynamic(this, &UBattleSubsystem::BroadcastBattleResult);
+		}
+	}
+}
+
+void UBattleSubsystem::Deinitialize()
+{
+	if (GetGameInstance())
+	{
+		if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+		{
+			MasterSubsystem->OnGameEnd.RemoveDynamic(this, &UBattleSubsystem::BroadcastBattleResult);
+		}
+	}
+	
+	Super::Deinitialize();
+}
 
 void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim, float BaseDamage, bool bIsCritical, float CritMultiplier)
 {
@@ -11,9 +42,16 @@ void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim
 	{
 		return;
 	}
+	
+	if (!CachedPlayer.IsValid())
+	{
+		CachedPlayer = Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	}
 
 	float FinalDamage = CalculateFinalDamage(Attacker, BaseDamage, bIsCritical, CritMultiplier);
-	if (Attacker->ActorHasTag(FName("Player")))
+	
+	AAPlayer* Player = CachedPlayer.Get();
+	if (Attacker->GetOwner() == Player || Attacker == Player)
 	{
 		TotalDamage += FMath::RoundToInt32(FinalDamage);
 	}
@@ -28,16 +66,9 @@ void UBattleSubsystem::ExecuteDamageCalculation(AActor* Attacker, AActor* Victim
 	ProcessDeathAndKillCount(Victim);
 	
 	// Test Log
-	if (GEngine)
-	{
-		FString Message = FString::Printf(TEXT("[%s] -> [%s] : %f Damage!"), 
-		   *Attacker->GetName(), *Victim->GetName(), FinalDamage);
-            
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, Message);
-	}
 	UE_LOG(LogTemp, Log, TEXT("=== BATTLE REPORT ==="));
 	UE_LOG(LogTemp, Log, TEXT("Attacker: %s | Victim: %s"), *Attacker->GetName(), *Victim->GetName());
-	UE_LOG(LogTemp, Log, TEXT("Final Damage: %f | Total Accum: %d"), FinalDamage, TotalDamage);
+	UE_LOG(LogTemp, Log, TEXT("Final Damage: %f | Total Damage: %d"), FinalDamage, TotalDamage);
 	UE_LOG(LogTemp, Log, TEXT("====================="));
 }
 
@@ -49,7 +80,9 @@ float UBattleSubsystem::CalculateFinalDamage(AActor* Attacker, float BaseDamage,
     }
 
 	float CalculatedDamage = BaseDamage;
-	if (Attacker->ActorHasTag(FName("Player")))
+	
+	AAPlayer* Player = CachedPlayer.Get();
+	if (Attacker->GetOwner() == Player || Attacker == Player)
 	{
 		CalculatedDamage *= CritMultiplier;
 	}
@@ -59,7 +92,6 @@ float UBattleSubsystem::CalculateFinalDamage(AActor* Attacker, float BaseDamage,
 
 void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 {
-    // TODO: 몬스터 델리게이트로 받기
 	AMonsterBase* Monster = Cast<AMonsterBase>(Victim);
 	if (!Monster || !Monster->GetStatComponent() || !Monster->GetStatComponent()->IsDead())
 	{
@@ -67,28 +99,50 @@ void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 	}
 
 	EMonsterGrade VictimGrade = Monster->GetStatComponent()->GetMonsterTag();
-	
-	bool bFound = false;
-	for (FMonsterKillReport& Report : Reports)
+	switch (VictimGrade)
 	{
-		if (Report.MonsterGrade == VictimGrade)
+	case EMonsterGrade::Melee:
 		{
-			++Report.KillCount;
-			bFound = true;
+			++MeleeKills;
 			break;
 		}
-	}
-
-	if (!bFound)
-	{
-		Reports.Add(FMonsterKillReport(VictimGrade, 1));
+	case EMonsterGrade::Ranged:
+		{
+			++RangedKills;
+			break;
+		}
+	case EMonsterGrade::EliteMelee:
+		{
+			++EliteMeleeKills;
+			break;
+		}
+	case EMonsterGrade::EliteRanged:
+		{
+			++EliteRangedKills;
+			break;
+		}
+	case EMonsterGrade::Boss:
+		{
+			++BossKills;
+			break;
+		}
+	default:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("MonsterGrade None"));
+			break;
+		}
 	}
 }
 
 void UBattleSubsystem::BroadcastBattleResult()
 {
+	if (!GetGameInstance())
+	{
+		return;
+	}
+	
 	if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 	{
-		MasterSubsystem->OnBattleResult.Broadcast(Reports, TotalDamage);
+		MasterSubsystem->OnBattleResult.Broadcast(MeleeKills, RangedKills, EliteMeleeKills, EliteRangedKills, BossKills, TotalDamage);
 	}
 }
