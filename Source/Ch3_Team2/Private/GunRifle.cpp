@@ -3,9 +3,9 @@
 
 #include "GunRifle.h"
 
-void AGunRifle::Fire_Gun(FVector Location, FVector Direction)
+void AGunRifle::FireGun(FVector Location, FVector Direction)
 {
 	// 발사	
 	CurrentAmmo -= 1;
-	Super::Fire_Gun(Location, Direction);
+	Super::FireGun(Location, Direction);
 }

@@ -15,22 +15,19 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	
 	void TravelToLevelByIndex(int32 LevelIndex);
-
-	UFUNCTION(BlueprintCallable, Category = "Level Flow")
 	int32 GetCurrentLevelIndex() const { return CurrentLevelIndex; }
+	int32 GetPrevLevelIndex() const { return PrevLevelIndex; }
 	
 	UFUNCTION(BlueprintCallable, Category = "Level Flow")
 	void TravelToNextLevel();
 	
-	UFUNCTION(BlueprintCallable, Category = "Level Flow")
-	bool IsLastLevel() const;
-
 protected:
 	UPROPERTY(EditDefaultsOnly, Config, Category = "Level Flow")
 	TSoftObjectPtr<ULevelFlowDataAsset> LevelFlowData;
 
 private:
 	int32 CurrentLevelIndex = INDEX_NONE;
+	int32 PrevLevelIndex = 0;
 
 	void SyncCurrentLevelIndex();
 	

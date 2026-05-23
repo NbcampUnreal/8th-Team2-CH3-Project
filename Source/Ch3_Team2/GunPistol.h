@@ -13,5 +13,5 @@ class CH3_TEAM2_API AGunPistol : public AGunBase
 	GENERATED_BODY()
 	
 public:
-	virtual void Fire_Gun(FVector Location, FVector Direction) override;
+	virtual void FireGun(FVector Location, FVector Direction) override;
 };

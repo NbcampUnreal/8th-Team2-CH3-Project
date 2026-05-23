@@ -11,9 +11,11 @@ public:
 	UPROPERTY()
 	
 	float Percent = 0.5f;
-	float SaveSpeed = 0;
-	float SaveReload = 0;
+	float SaveSpeed = 0.0f;
+	float SaveReload = 0.0f;
 	
+	
+	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	virtual void ActiveSkill()override;
 	void EndSkill();

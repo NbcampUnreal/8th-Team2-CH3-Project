@@ -1,6 +1,6 @@
 #include "Data/SaveSubsystem.h"
+#include "MasterSubsystem.h"
 #include "Data/SaveData.h"
-#include "Battle/BattleSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 const FString USaveSubsystem::SlotName = TEXT("MainSave");
@@ -8,23 +8,44 @@ const FString USaveSubsystem::SlotName = TEXT("MainSave");
 void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     // 순서 꼬임 방지
-    Collection.InitializeDependency<UBattleSubsystem>();
+    Collection.InitializeDependency<UMasterSubsystem>();
 
     Super::Initialize(Collection);
     
     LoadGame();
     
-    if (UBattleSubsystem* BattleSubsystem = GetGameInstance()->GetSubsystem<UBattleSubsystem>())
+    MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+    if (MasterSubsystem)
     {
-        BattleSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnBattleResultReceived);
+        MasterSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnMasterBattleResult);
+        MasterSubsystem->OnSaveTime.AddDynamic(this, &USaveSubsystem::OnMasterSaveTime);
+    }
+    
+    
+    
+    USaveData* LoadedSave = Cast<USaveData>(
+        UGameplayStatics::LoadGameFromSlot(SlotName, 0)
+    );
+
+    if (!LoadedSave)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("세이브 파일 없음"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("=== 세이브 데이터 ==="));
+    for (int32 i = 0; i < LoadedSave->StageClearTime.Num(); i++)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Stage%d ClearTime: %.2f"), i + 1, LoadedSave->StageClearTime[i]);
     }
 }
 
 void USaveSubsystem::Deinitialize()
 {
-    if (UBattleSubsystem* BattleSubsystem = GetGameInstance()->GetSubsystem<UBattleSubsystem>())
+    if (MasterSubsystem)
     {
-        BattleSubsystem->OnBattleResult.RemoveDynamic(this, &USaveSubsystem::OnBattleResultReceived);
+        MasterSubsystem->OnSaveTime.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveTime);
+        MasterSubsystem->OnBattleResult.RemoveDynamic(this, &USaveSubsystem::OnMasterBattleResult);
     }
 
     // 부모를 마지막에 해제
@@ -61,7 +82,10 @@ void USaveSubsystem::AddCurrency(int32 Amount)
     }
     
     CurrentSave->Currency += Amount;
-    OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
+    if (MasterSubsystem)
+    {
+        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
+    }
 }
 
 int32 USaveSubsystem::GetCurrency() const
@@ -77,11 +101,14 @@ bool USaveSubsystem::TrySpendCurrency(int32 Amount)
     }
 
     CurrentSave->Currency -= Amount;
-    OnCurrencyChanged.Broadcast(CurrentSave->Currency, -Amount);
+    if (MasterSubsystem)
+    {
+        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
+    }
     return true;
 }
 
-void USaveSubsystem::OnBattleResultReceived(const TArray<FMonsterKillReport>& KillReports, int32 GlobalTotalDamage)
+void USaveSubsystem::OnMasterBattleResult(const TArray<FMonsterKillReport>& KillReports, int32 GlobalTotalDamage)
 {
     if (!CurrentSave)
     {
@@ -116,33 +143,25 @@ void USaveSubsystem::OnBattleResultReceived(const TArray<FMonsterKillReport>& Ki
     }
 }
 
-// TODO: 모든 스테이지 종료시 클리어 타임 저장
-void USaveSubsystem::OnStageCleared(int32 StageIndex, float ClearTime)
+void USaveSubsystem::OnMasterSaveTime(int32 StageIndex, float ClearTime)
 {
     if (!CurrentSave)
     {
         return;
     }
-
-    auto UpdateBest = [](float& Slot, float NewTime)
+    
+    if (ClearTime <= 0.f)
     {
-        if (NewTime <= 0.f)
-        {
-            return;
-        }
-        if (Slot <= 0.f || NewTime < Slot)
-        {
-            Slot = NewTime;
-        }
-    };
-
-    switch (StageIndex)
+        return;
+    }
+    
+    if (!CurrentSave->StageClearTime.IsValidIndex(StageIndex))
     {
-        case 1: UpdateBest(CurrentSave->Stage1Time, ClearTime); break;
-        case 2: UpdateBest(CurrentSave->Stage2Time, ClearTime); break;
-        case 3: UpdateBest(CurrentSave->Stage3Time, ClearTime); break;
-        default: break;
+        UE_LOG(LogTemp, Warning, TEXT("잘못된 StageIndex: %d"), StageIndex);
+        return;
     }
 
+    CurrentSave->StageClearTime[StageIndex] = ClearTime;
+    
     SaveGame();
 }

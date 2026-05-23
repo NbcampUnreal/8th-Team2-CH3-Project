@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Poolable.h"
 #include "GameFramework/Actor.h"
 #include "HealTotem.generated.h"
 
@@ -9,13 +10,17 @@ class UStaticMeshComponent;
 class USceneComponent;
 
 UCLASS()
-class CH3_TEAM2_API AHealTotem : public AActor
+class CH3_TEAM2_API AHealTotem : public AActor, public IPoolable
 {
 	GENERATED_BODY()
 	
 public:	
 	AHealTotem();
 
+	virtual FOnReadyToReturn& GetOnReadyToReturn() override { return ReadyToReturn; }
+	virtual void OnSpawnFromPool(const FTransform& Transform) override;
+	virtual void OnReturnToPool() override;
+	
 	void Interact(AActor* InteractorCharacter);
 
 protected:
@@ -42,4 +47,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "DesignSettings")
 	int32 HealAmount = 50;
+	
+	UPROPERTY()
+	FOnReadyToReturn ReadyToReturn;
 };

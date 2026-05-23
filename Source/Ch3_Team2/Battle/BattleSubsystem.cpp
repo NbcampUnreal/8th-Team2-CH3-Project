@@ -1,6 +1,7 @@
 #include "Battle/BattleSubsystem.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/Engine.h"
+#include "MonsterTypes.h"
 #include "MonsterBase.h"
 #include "MonsterStatComponent.h"
 
@@ -86,9 +87,8 @@ void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 
 void UBattleSubsystem::BroadcastBattleResult()
 {
-	if (!OnBattleResult.IsBound())
+	if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 	{
-		return;
+		MasterSubsystem->OnBattleResult.Broadcast(Reports, TotalDamage);
 	}
-	OnBattleResult.Broadcast(Reports, TotalDamage);
 }
