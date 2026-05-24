@@ -101,12 +101,12 @@ void AMonsterSpawner::RandomSpawnMonster()
 
 void AMonsterSpawner::OnMonsterDespawned(AActor* DespawnedActor)
 {
-	
 	CurrentActiveMonsters = FMath::Max(0, CurrentActiveMonsters - 1);
 }
 
 void AMonsterSpawner::SpawnBossMonster()
 {
+	GetWorld()->GetTimerManager().ClearTimer(BossSpawnTimerHandle);
 	if (MonsterConfigs.IsEmpty())
 	{
 		return;
@@ -133,7 +133,6 @@ void AMonsterSpawner::SpawnBossMonster()
 	SpawnRotation.Pitch = 0.f; 
 	
 	SpawnMonster(BossConfig->MonsterClass, SpawnTransform, BossConfig->MonsterStats);
-	GetWorld()->GetTimerManager().ClearTimer(BossSpawnTimerHandle);
 }
 
 FMonsterSpawnConfig* AMonsterSpawner::GetRandomMonster()
