@@ -42,6 +42,15 @@ public:
 	void SetMagazineLevel(int32 Level){Magazine.Level = Level;}
 	void SetScopeLevel(int32 Level){Scope.Level = Level;}
 	void SetGripLevel(int32 Level){Grip.Level = Level;}
+	
+	void SetRelicBonus(float SetBonus){RelicBonus = SetBonus;}
+	void SetTotalBonus(float SetBonus){TotalBonus = SetBonus;}
+	void SetCritMultiplier(float SetBonus){CritMultiplier = SetBonus;}
+	
+	float GetRelicBonus()const{return RelicBonus;}
+	float GetTotalBonus()const{return TotalBonus;}
+	float GetCritMultiplier()const{return CritMultiplier;}
+		
 	//get
 	int32 GetCurrentAmmo()const{return CurrentAmmo;}
 	int32 GetMaxAmmo()const{return MaxAmmo;}

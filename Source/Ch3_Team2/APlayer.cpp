@@ -42,8 +42,6 @@ void AAPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	LoadData(0);
-	
 	if (GetWorld())
 	{
 		FActorSpawnParameters SpawnParams;
@@ -66,12 +64,6 @@ void AAPlayer::BeginPlay()
 			}
 		}
 	}
-	
-	if (MyWeaponInventory.IsValidIndex(2))
-	{
-		SwitchWeapon(2);
-	}
-	
 	PController = Cast<APlayerController>(GetController());
 	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
 	{
@@ -86,10 +78,7 @@ void AAPlayer::BeginPlay()
 		}
 	}
 	
-	if (MySkillInventory.IsValidIndex(2))
-	{
-		SwitchSkill(2);
-	}
+	LoadData(0,1,1);
 }
 
 
@@ -143,7 +132,22 @@ void AAPlayer::SwitchWeapon(int32 Index)
 					FAttachmentTransformRules::SnapToTargetIncludingScale,
 					TEXT("GripPoint")
 				);
-				UE_LOG(LogTemp, Log, TEXT("무기교체 및 ChildActor 에셋 스왑 완료: %s"), *EquipedGun->GetName());
+				EquipedGun->SetActorEnableCollision(false);
+				EquipedGun->SetOwner(this);
+				
+				EquipedGun->SetBulletLevel(TargetWeaponData->GetBulletLevel());
+				EquipedGun->SetMagazineLevel(TargetWeaponData->GetMagazineLevel());
+				EquipedGun->SetScopeLevel(TargetWeaponData->GetScopeLevel());
+				EquipedGun->SetGripLevel(TargetWeaponData->GetGripLevel());
+				
+				EquipedGun->SetRelicBonus(TargetWeaponData->GetRelicBonus());
+				EquipedGun->SetTotalBonus(TargetWeaponData->GetTotalBonus());
+				EquipedGun->SetCritMultiplier(TargetWeaponData->GetCritMultiplier());
+             
+				// 수치들이 복사되었으니 새 총에서 스펙을 재계산(LoadData)하게 만듭니다.
+				EquipedGun->LoadData(); 
+
+				UE_LOG(LogTemp, Log, TEXT("무기교체 완료 및 데이터 동기화 성공!"));
 			}
 		}
 	}
@@ -319,8 +323,10 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		
 	}
 }
-void AAPlayer::LoadData(int32 GetLevel)
+void AAPlayer::LoadData(int32 GetLevel, int32 GetSkill, int32 GetWeapon)
 {
+	SwitchSkill(GetSkill);
+	SwitchWeapon(GetWeapon);
 	CurrentLevel = GetLevel;
 	MagnetComp->SetSphereRadius(MagnetRadius);
 	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;

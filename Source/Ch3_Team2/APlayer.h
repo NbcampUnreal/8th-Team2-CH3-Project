@@ -116,7 +116,7 @@ public:
 	
 	
 	
-	void LoadData(int32 GetLevel);
+	void LoadData(int32 GetLevel,int32 GetSkill, int32 GetWeapon);
 	void SaveData();
 	
 	// Setter

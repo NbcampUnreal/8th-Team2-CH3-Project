@@ -39,6 +39,8 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 	float SafeSpread = FMath::Max(SpreadAngle, 0.0f);
 	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SafeSpread));
 	FVector End = Location + (SpreadDirection * EffectiveRange);
+	
+	
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
