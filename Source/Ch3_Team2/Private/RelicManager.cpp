@@ -1,5 +1,4 @@
 #include "RelicManager.h"
-#include "Ch3_Team2/RelicEffect/RelicEffectBase.h"
 #include "Ch3_Team2/APlayer.h"
 #include "Kismet/GameplayStatics.h"
 
