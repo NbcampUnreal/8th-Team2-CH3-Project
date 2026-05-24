@@ -32,7 +32,7 @@ void USkillOverDrive::ActiveSkill()
 			//float CurrentSpeed = GetOwner()->GetActorSpeed();
 			SaveReload = CachedGun->GetReloadSpeed();
 			SaveReload *= Percent;
-			CachedGun->DegreaseReloadTimeStat(SaveReload);
+			CachedGun->DecreaseReloadTimeStat(SaveReload);
 			
 			SaveSpeed = PlayerOwner->GetSpeed();
 			SaveSpeed *= Percent;
@@ -66,7 +66,7 @@ void USkillOverDrive::EndSkill()
 	{
 		// [스탯 원상 복구]
 		PlayerOwner->AddPlayerSpeed(-SaveSpeed);
-		CachedGun->DegreaseReloadTimeStat(-SaveReload); 
+		CachedGun->DecreaseReloadTimeStat(-SaveReload); 
 		SaveSpeed = 0.0f;
 		SaveReload = 0.0f;
 	}

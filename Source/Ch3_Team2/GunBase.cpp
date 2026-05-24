@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "GunBase.h"
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
@@ -18,14 +15,13 @@ bool AGunBase::HasAmmo()
 			,false
 		);
 		CanFire = false;
-		
+		--CurrentAmmo;
 		return true;
 	}
 	return false;
 }
 bool AGunBase::CanReload()
 {
-	// 총알이 가득 차있을 떄 
 	if (CurrentAmmo < MaxAmmo && bReloadingCheck == false )
 	{
 		bReloadingCheck = true;
@@ -41,19 +37,20 @@ void AGunBase::Reloading()
 }
 void AGunBase::FireGun(FVector Location, FVector Direction)
 {
-	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SpreadAngleDegrees ));
+	float SafeSpread = FMath::Max(SpreadAngle, 0.0f);
+	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SafeSpread));
 	FVector End = Location + (SpreadDirection * EffectiveRange);
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);           // 자기 자신 제외
-	Params.AddIgnoredActor(GetOwner());    // 소유자(예: 캐릭터) 제외
+	Params.AddIgnoredActor(this);          
+	Params.AddIgnoredActor(GetOwner());    
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Location,
 		End,
-		ECC_Visibility, // 블루프린트의 Visibility 채널
+		ECC_Visibility, 
 		Params
 	);
 	FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
@@ -74,7 +71,6 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
 	}
 }
-
 void AGunBase::BattleIn(const FHitResult& HitResult)
 {
 	AMonsterBase* Monster = Cast<AMonsterBase>(HitResult.GetActor());
@@ -94,42 +90,63 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 		CritMultiplier
 	);
 }
+
+void AGunBase::UpdateWeaponStats()
+{
+	SpreadAngle = FMath::Max(
+		SpreadAngleDegrees -
+		SpreadAngleDegrees * Scope.Level * Scope.Value,
+		0.1f
+	);
+
+	ActiveRecoil = FMath::Max(
+		Recoil -
+		(Recoil * Handle.Level * Handle.Value) +
+		AddedRecoil,
+		0.1f
+	);
+
+	ActiveReload = FMath::Max(
+		ReloadTime -
+		ReloadTime * Magazine.Level * Magazine.Value +
+		AddReloadTime,
+		0.1f
+	);
+	AddDamage(0,0,0);
+}
+
 void AGunBase::HandleFireDelay()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
 	CanFire = true;
 }
 
-void AGunBase::AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical)
+void AGunBase::AddDamage(float Add_RelicDamage, float Add_TotalDamage, float Critical)
 {
 	RelicBonus += Add_RelicDamage;
-	TotalBonus += Add_TotalDamage;
+	TotalBonus += Add_TotalDamage / 100.0f;
 	CritMultiplier += Critical;
-	FinalDamage = (BaseDamage * (1 + Bullet.Value )+ RelicBonus ) * TotalBonus;
+	FinalDamage = (BaseDamage * (1 + Bullet.Value) + RelicBonus) * (1 + TotalBonus);
 }
 void AGunBase::SelectParts(EPartsName parts)
 {
 	if (parts == EPartsName::Bullet && Bullet.Level < MaxLevelParts)
 	{
 		++Bullet.Level;
-		Bullet.Value += LevelUpDamageValue;
-		AddDamage(0,0,0);
-	}
-	else if (parts == EPartsName::Magazine && Magazine.Level < MaxLevelParts)
-	{
-		++Scope.Level;
-		SpreadAngleDegrees -= Scope.Value;
 	}
 	else if (parts == EPartsName::Scope && Scope.Level < MaxLevelParts)
 	{
-		++Handle.Level;
-		Recoil -= Handle.Value; 
+		++Scope.Level;
 	}
 	else if (parts == EPartsName::Handle && Handle.Level < MaxLevelParts)
 	{
-		++Magazine.Level;
-		ReloadTime -= Magazine.Value;
+		++Handle.Level;
 	}
+	else if (parts == EPartsName::Magazine && Magazine.Level < MaxLevelParts)
+	{
+		++Magazine.Level;
+	}
+	UpdateWeaponStats();
 }
 
 FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
@@ -154,50 +171,53 @@ FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 		}
 	default:
 		{
-			
 		return FGunParts();
 		}
 	}
 }
-void AGunBase::DegreaseReloadTimeStat(float AddReload)
+void AGunBase::DecreaseReloadTimeStat(float AddReload)
 {
-	if (ReloadTime + AddReload >= 0.1f)
+	if (ActiveReload + AddReload >= 0.1f)
 	{
-		ReloadTime += AddReload;
+		AddReloadTime += AddReload;
+		ActiveReload = ReloadTime - ReloadTime* Magazine.Level *Magazine.Value +AddReloadTime;
 	}
 }
 void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
 	Bullet.Level = 0;
-	Bullet.Value = 0;
+	Bullet.Value = LevelUpDamageValue;
 	Bullet.Parts = EPartsName::Bullet;
 	
 	Magazine.Name = "Magazine";
 	Magazine.Level = 0;
-	Magazine.Value = ReloadTime*LevelUpReloadValue;
+	Magazine.Value = LevelUpReloadValue;
 	Magazine.Parts = EPartsName::Magazine;
 	
 	Scope.Name = "Scope";
 	Scope.Level = 0;  
-	Scope.Value = SpreadAngleDegrees*LevelUpScopeValue;  
+	Scope.Value = LevelUpScopeValue;  
 	Scope.Parts = EPartsName::Scope;
 	
 	Handle.Name = "Handle";
 	Handle.Level = 0;
-	Handle.Value = Recoil* LevelUpHandleValue;
+	Handle.Value = LevelUpHandleValue;
 	Handle.Parts = EPartsName::Handle;
 }
 float AGunBase::GetCurrentRecoilPitch() const
 {
-	float RecoilModifier = FMath::Clamp(1.0f - Handle.Value, 0.1f, 1.0f);
-	return Recoil * RecoilModifier;
+	return FMath::Max(ActiveRecoil, 0.1f);
 }
 
 void AGunBase::BeginPlay()
 {
 	Super::BeginPlay();
-	InitializeParts();
-	AddDamage(0,0,0);
 	
+	ActiveRecoil = Recoil; 
+	ActiveReload = ReloadTime;
+	SpreadAngle = SpreadAngleDegrees;
+	
+	InitializeParts();
+	AddDamage(0,0,0);	
 }

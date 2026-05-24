@@ -6,7 +6,6 @@
 
 class UMasterSubsystem;
 class USaveData;
-struct FMonsterKillReport;
 
 UCLASS()
 class CH3_TEAM2_API USaveSubsystem : public UGameInstanceSubsystem
@@ -28,7 +27,11 @@ public:
 	UMasterSubsystem* MasterSubsystem;	
 	
 	UFUNCTION()
-	void OnMasterBattleResult(const TArray<FMonsterKillReport>& KillReports, int32 GlobalTotalDamage);
+	void OnMasterBattleResult(
+		int32 MeleeKills,		int32 RangedKills,
+		int32 EliteMeleeKills,	int32 EliteRangedKills,
+		int32 BossKills,		int32 GlobalTotalDamage
+	);
 	
 	UFUNCTION()
 	void OnMasterSaveTime(int32 StageIndex, float ClearTime);

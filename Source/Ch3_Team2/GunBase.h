@@ -13,15 +13,12 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 	GENERATED_BODY()
 
 public:
-	
-	
 	void InitializeParts();
 	bool HasAmmo();
 	bool CanReload();
 	
 	UFUNCTION(BlueprintCallable)
 	void Reloading();
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void FireGun(FVector Location, FVector Direction);
 	
 	// RPM ( 연사 속도 )시간 끝내는함수 
@@ -30,15 +27,41 @@ public:
 	
 	void BattleIn(const FHitResult& HitResult);
 	
-	int32 GetCurrentAmmo(){return CurrentAmmo;}
-	int32 GetMaxAmmo(){return MaxAmmo;}
+	void UpdateWeaponStats();
+	
 	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
-	
-	float GetReloadSpeed(){return ReloadTime;}
-	void DegreaseReloadTimeStat(float AddReload);
-	
 	void AddCritical(float Critical){CritMultiplier += Critical;}
 	
+	void DecreaseReloadTimeStat(float AddReload);
+	//set
+	void SetBulletLevel(int32 Level){Bullet.Level = Level;}
+	void SetMagazineLevel(int32 Level){Magazine.Level = Level;}
+	void SetScopeLevel(int32 Level){Scope.Level = Level;}
+	void SetHandleLevel(int32 Level){Handle.Level = Level;}
+	//get
+	int32 GetCurrentAmmo()const{return CurrentAmmo;}
+	int32 GetMaxAmmo()const{return MaxAmmo;}
+	float GetReloadSpeed()const{return ReloadTime;}
+	
+	int32 GetHandleLevel()const{return Handle.Level;}
+	int32 GetScopeLevel()const{return Scope.Level;}
+	int32 GetMagazineLevel()const{return Magazine.Level;}
+	int32 GetBulletLevel()const{return Bullet.Level;}
+	//const
+	const int32 MaxLevelParts = 4;
+	const float LevelUpDamageValue = 0.25f;
+	const float LevelUpReloadValue = 0.15f;
+	const float LevelUpScopeValue = 0.2f;
+	const float LevelUpHandleValue =0.2f;
+	
+	// 집탄률
+	float SpreadAngle = 0;
+	float ActiveRecoil = 0;
+	float ActiveReload = 0;
+	
+	// 추가되는 스텟
+	float AddReloadTime = 0;
+	float AddedRecoil = 0;
 	
 	// Weapon Parts
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
@@ -57,11 +80,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon|Parts")
 	FGunParts GetPartsData(EPartsName PartsType) const;
 	
-	const int32 MaxLevelParts = 4;
-	const float LevelUpDamageValue = 0.25f;
-	const float LevelUpReloadValue = 0.15f;
-	const float LevelUpScopeValue = 0.2f;
-	const float LevelUpHandleValue =0.2f;
+	
 	
 	// [추가] 핸들 파츠(반동 감소) 스탯이 반영된 최종 반동 값을 반환하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Recoil")

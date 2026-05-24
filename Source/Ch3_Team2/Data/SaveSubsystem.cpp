@@ -20,24 +20,6 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         MasterSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnMasterBattleResult);
         MasterSubsystem->OnSaveTime.AddDynamic(this, &USaveSubsystem::OnMasterSaveTime);
     }
-    
-    
-    
-    USaveData* LoadedSave = Cast<USaveData>(
-        UGameplayStatics::LoadGameFromSlot(SlotName, 0)
-    );
-
-    if (!LoadedSave)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("세이브 파일 없음"));
-        return;
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("=== 세이브 데이터 ==="));
-    for (int32 i = 0; i < LoadedSave->StageClearTime.Num(); i++)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Stage%d ClearTime: %.2f"), i + 1, LoadedSave->StageClearTime[i]);
-    }
 }
 
 void USaveSubsystem::Deinitialize()
@@ -108,39 +90,20 @@ bool USaveSubsystem::TrySpendCurrency(int32 Amount)
     return true;
 }
 
-void USaveSubsystem::OnMasterBattleResult(const TArray<FMonsterKillReport>& KillReports, int32 GlobalTotalDamage)
+void USaveSubsystem::OnMasterBattleResult(int32 MeleeKills, int32 RangedKills, int32 EliteMeleeKills, int32 EliteRangedKills, int32 BossKills, int32 GlobalTotalDamage)
 {
     if (!CurrentSave)
     {
         return;
     }
     
-    CurrentSave->TotalDamage += GlobalTotalDamage;
+    CurrentSave->TotalDamage        = GlobalTotalDamage;
     
-    for (const FMonsterKillReport& Report : KillReports)
-    {
-        switch (Report.MonsterGrade)
-        {
-            case EMonsterGrade::Melee:
-                CurrentSave->MeleeKills += Report.KillCount;
-                break;
-            case EMonsterGrade::Ranged:
-                CurrentSave->RangedKills += Report.KillCount;
-                break;
-            case EMonsterGrade::EliteMelee:
-                CurrentSave->EliteMeleeKills += Report.KillCount;
-                break;
-            case EMonsterGrade::EliteRanged:
-                CurrentSave->EliteRangedKills += Report.KillCount;
-                break;
-            case EMonsterGrade::Boss:
-                CurrentSave->BossKills += Report.KillCount;
-                break;
-            
-            default:
-                break;
-        }
-    }
+    CurrentSave->MeleeKills         = MeleeKills;
+    CurrentSave->RangedKills        = RangedKills;
+    CurrentSave->EliteMeleeKills    = EliteMeleeKills;
+    CurrentSave->EliteRangedKills   = EliteRangedKills;
+    CurrentSave->BossKills          = BossKills;
 }
 
 void USaveSubsystem::OnMasterSaveTime(int32 StageIndex, float ClearTime)
