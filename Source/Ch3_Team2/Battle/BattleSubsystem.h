@@ -26,7 +26,12 @@ public:
 	
 	UFUNCTION()
 	void BroadcastBattleResult();
+	
+	UFUNCTION()
+	void BroadcastEliteMonsterKills();
 
+	UFUNCTION()
+	void BroadcastBossMonsterKills();
 protected:
 	TWeakObjectPtr<AAPlayer> CachedPlayer;
 	

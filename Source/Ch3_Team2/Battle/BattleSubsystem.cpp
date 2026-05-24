@@ -114,16 +114,19 @@ void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 	case EMonsterGrade::EliteMelee:
 		{
 			++EliteMeleeKills;
+			BroadcastEliteMonsterKills();
 			break;
 		}
 	case EMonsterGrade::EliteRanged:
 		{
 			++EliteRangedKills;
+			BroadcastEliteMonsterKills();
 			break;
 		}
 	case EMonsterGrade::Boss:
 		{
 			++BossKills;
+			BroadcastBossMonsterKills();
 			break;
 		}
 	default:
@@ -146,3 +149,30 @@ void UBattleSubsystem::BroadcastBattleResult()
 		MasterSubsystem->OnBattleResult.Broadcast(MeleeKills, RangedKills, EliteMeleeKills, EliteRangedKills, BossKills, TotalDamage);
 	}
 }
+
+void UBattleSubsystem::BroadcastEliteMonsterKills()
+{
+	if (!GetGameInstance())
+	{
+		return;
+	}
+	
+	if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+	{
+		MasterSubsystem->OnEliteMonsterKills.Broadcast();
+	}
+}
+
+void UBattleSubsystem::BroadcastBossMonsterKills()
+{
+	if (!GetGameInstance())
+	{
+		return;
+	}
+	
+	if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+	{
+		MasterSubsystem->OnBossMonsterKills.Broadcast();
+	}
+}
+

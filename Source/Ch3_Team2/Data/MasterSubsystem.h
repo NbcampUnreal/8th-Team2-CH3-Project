@@ -19,6 +19,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnSaveGun, int32, GripLevel, int3
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameEnd);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEliteMonsterKills);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBossMonsterKills);
+
 UCLASS()
 class CH3_TEAM2_API UMasterSubsystem : public UGameInstanceSubsystem
 {
@@ -42,4 +46,10 @@ public:
 	
 	UPROPERTY()
 	FOnGameEnd OnGameEnd;
+	
+	UPROPERTY()
+	FOnEliteMonsterKills OnEliteMonsterKills;
+	
+	UPROPERTY()
+	FOnBossMonsterKills OnBossMonsterKills;
 };
