@@ -50,6 +50,9 @@ protected:
 	UFUNCTION()
 	void DropExpItem();
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> PortalClass;
+	void SpawnBossPortal();
 	
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* DeathMontage;
