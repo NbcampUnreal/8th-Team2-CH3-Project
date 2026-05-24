@@ -27,8 +27,6 @@ void AAGameState::Tick(float DeltaTime)
 
 void AAGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
-	
 	bIsTracking = false;
 	
 	if (EndPlayReason == EEndPlayReason::EndPlayInEditor)
@@ -36,17 +34,19 @@ void AAGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		return;
 	}
 
-	const auto* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	auto* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
 	if(!MasterSubsystem)
 	{
 		return;
 	}
 	
-	if (const auto* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+	if (auto* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
 	{
 		if (LevelFlowSubsystem->GetPrevLevelIndex() != 0)
 		{
 			MasterSubsystem->OnSaveTime.Broadcast(LevelFlowSubsystem->GetPrevLevelIndex() - 1, PlayTime);
 		}
 	}
+	
+	Super::EndPlay(EndPlayReason);
 }

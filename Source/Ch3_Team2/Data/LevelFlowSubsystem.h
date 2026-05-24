@@ -27,7 +27,7 @@ protected:
 
 private:
 	int32 CurrentLevelIndex = INDEX_NONE;
-	int32 PrevLevelIndex = 0;
+	int32 PrevLevelIndex = INDEX_NONE;
 
 	void SyncCurrentLevelIndex();
 	
