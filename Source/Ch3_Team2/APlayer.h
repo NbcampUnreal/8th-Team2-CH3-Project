@@ -75,7 +75,7 @@ public:
 	
 	// Weapon
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
-	UChildActorComponent* ChildActor;
+	UChildActorComponent* ChildActors;
 
 	virtual void BeginPlay() override;
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
@@ -109,6 +109,11 @@ public:
 	
 	int32 RelicBonusHp = 0;
 	float RelicBonusSpeed = 0.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "weapon")
+	int32 CurrentSkill = 1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "weapon")
+	int32 CurrentWeapon = 1;
 	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
@@ -150,17 +155,12 @@ public:
 	void DecreaseSkillCoolTime(float SkillCoolTime);
 	void LevelUpStat();
 	void OnDeath();
-	
-	
-	
+		
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RecoilControll")
 	APlayerController* PController;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RecoilControll")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RecoilControll")
 	AGunBase* EquipedGun;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	TArray<AGunBase*> MyWeaponInventory;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<TSubclassOf<AGunBase>> WeaponBlueprintClasses;

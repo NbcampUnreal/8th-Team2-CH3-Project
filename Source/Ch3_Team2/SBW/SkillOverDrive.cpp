@@ -23,9 +23,9 @@ void USkillOverDrive::ActiveSkill()
 		return;
 	}
 
-	if (PlayerOwner->ChildActor)
+	if (PlayerOwner->ChildActors)
 	{
-		AGunBase* CachedGun = Cast<AGunBase>(PlayerOwner->ChildActor->GetChildActor());
+		AGunBase* CachedGun = Cast<AGunBase>(PlayerOwner->ChildActors->GetChildActor());
 		// 무기가 성공적으로 캐싱되었다면 스킬 로직을 실행합니다.
 		if (CachedGun)
 		{
@@ -61,7 +61,7 @@ void USkillOverDrive::EndSkill()
 		return;
 	}
 
-	AGunBase* CachedGun = Cast<AGunBase>(PlayerOwner->ChildActor->GetChildActor());
+	AGunBase* CachedGun = Cast<AGunBase>(PlayerOwner->ChildActors->GetChildActor());
 	if (CachedGun)
 	{
 		// [스탯 원상 복구]

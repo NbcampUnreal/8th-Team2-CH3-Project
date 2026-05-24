@@ -13,7 +13,10 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 	GENERATED_BODY()
 
 public:
+	
 	AGunBase();
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	void InitializeParts();
 	bool HasAmmo();
 	bool CanReload();
@@ -94,13 +97,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon|Parts")
 	FGunParts GetPartsData(EPartsName PartsType) const;
 	
-	
+	// 💡 타이머 대신 사용할 쿨타임 계산 변수들
+	float FireCooldownTimer = 0.0f;
 	
 	// [추가] 핸들 파츠(반동 감소) 스탯이 반영된 최종 반동 값을 반환하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Recoil")
 	float GetCurrentRecoilPitch() const;
-	
-	
-protected:
-	virtual void BeginPlay() override;
 };

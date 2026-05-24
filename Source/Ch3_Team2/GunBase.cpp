@@ -1,20 +1,32 @@
 #include "GunBase.h"
+#include "Data/MasterSubsystem.h"
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
 #include "DrawDebugHelpers.h"
 
 bool AGunBase::HasAmmo()
 {
-	if (CanFire && bReloadingCheck == false && CurrentAmmo > 0)
+	if (CanFire && !bReloadingCheck && CurrentAmmo > 0)
 	{
+		CanFire = false; // 사격 잠금
+
+		// 부모의 타이머 핸들(TimerFireDelay)과 부모의 RoundsPerSecond를 사용해 타이머 등록
+		// 명시적으로 1.0f 소수점 연산을 보장합니다.
+		float FireInterval = 1.0f / FMath::Max(RoundsPerSecond, 0.1f);
+
 		GetWorld()->GetTimerManager().SetTimer(
-			TimerFireDelay
-			,this
-			,&AGunBase::GripFireDelay
-			,1.f / RoundsPerSecond
-			,false
+			TimerFireDelay,
+			this,
+			&AGunBase::GripFireDelay,
+			FireInterval,
+			false
 		);
-		CanFire = false;
+		
+		// 디버깅용 로그
+		UE_LOG(LogTemp, Error, TEXT("⚠️ [HasAmmo 거절] CanFire: %s | bReloadingCheck: %s | CurrentAmmo: %d"),
+			CanFire ? TEXT("True") : TEXT("False"),
+			bReloadingCheck ? TEXT("True") : TEXT("False"),
+			CurrentAmmo);
 		return true;
 	}
 	return false;
@@ -30,9 +42,10 @@ bool AGunBase::CanReload()
 }
 void AGunBase::Reloading()
 {
-	// 재장전 되었을 떄 
 	bReloadingCheck = false;
+	CanFire = true;
 	CurrentAmmo = MaxAmmo;
+
 }
 void AGunBase::FireGun(FVector Location, FVector Direction)
 {
@@ -115,19 +128,17 @@ void AGunBase::LoadData()
 
 void AGunBase::SaveData()
 {
-	/*
-	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
 	if (MasterSubsystem)
 	{
 		MasterSubsystem->OnSaveGun.Broadcast(Grip.Level, Scope.Level, Magazine.Level, Bullet.Level);
 	}
-	 */
 }
 
 void AGunBase::GripFireDelay()
 {
+	CanFire = true; // 부모의 CanFire를 다시 true로 엽니다!
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
-	CanFire = true;
 }
 void AGunBase::AddDamage(float Add_RelicDamage, float Add_TotalDamage, float Critical)
 {
@@ -195,6 +206,22 @@ AGunBase::AGunBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
+void AGunBase::BeginPlay()
+{
+	Super::BeginPlay();
+    
+	CurrentAmmo = MaxAmmo;
+	CanFire = true;
+	bReloadingCheck = false;
+	
+	ActiveRecoil = Recoil; 
+	ActiveReload = ReloadTime;
+	SpreadAngle = SpreadAngleDegrees;
+	
+	InitializeParts();
+	AddDamage(0,0,0);	
+	
+}
 
 void AGunBase::InitializeParts()
 {
@@ -222,15 +249,16 @@ float AGunBase::GetCurrentRecoilPitch() const
 {
 	return FMath::Max(ActiveRecoil, 0.1f);
 }
-
-void AGunBase::BeginPlay()
+void AGunBase::Tick(float DeltaTime)
 {
-	Super::BeginPlay();
-	
-	ActiveRecoil = Recoil; 
-	ActiveReload = ReloadTime;
-	SpreadAngle = SpreadAngleDegrees;
-	
-	InitializeParts();
-	AddDamage(0,0,0);	
+	Super::Tick(DeltaTime);
+
+	if (!CanFire)
+	{
+		FireCooldownTimer -= DeltaTime;
+		if (FireCooldownTimer <= 0.0f)
+		{
+			CanFire = true;
+		}
+	}
 }

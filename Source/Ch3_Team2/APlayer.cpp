@@ -10,6 +10,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "GunBase.h"
 #include "InputActionValue.h"
+#include "Data/MasterSubsystem.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Prop/HealTotem.h"
@@ -27,8 +28,8 @@ AAPlayer::AAPlayer()
 
 	GetMesh()->AddRelativeLocation(FVector(10.0f,0,0));
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
-	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
-	ChildActor->SetupAttachment(GetMesh());
+	ChildActors = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
+	ChildActors->SetupAttachment(GetMesh());
 	
 	PrimaryActorTick.bCanEverTick = true;
 	
@@ -41,44 +42,9 @@ AAPlayer::AAPlayer()
 void AAPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (GetWorld())
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		SpawnParams.Instigator = GetInstigator();
-
-		for (TSubclassOf<AGunBase> WeaponClass : WeaponBlueprintClasses)
-		{
-			if (WeaponClass)
-			{
-				AGunBase* NewWeapon = GetWorld()->SpawnActor<AGunBase>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-                
-				if (NewWeapon)
-				{
-					NewWeapon->SetActorHiddenInGame(true);
-					NewWeapon->SetActorEnableCollision(false);
-                    
-					MyWeaponInventory.Add(NewWeapon);
-				}
-			}
-		}
-	}
 	PController = Cast<APlayerController>(GetController());
-	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
-	{
-		if (SkillClass)
-		{
-			USkillBaseComp* NewSkill = NewObject<USkillBaseComp>(this, SkillClass);
-			if (NewSkill)
-			{
-				NewSkill->SetComponentTickEnabled(false);
-				MySkillInventory.Add(NewSkill);
-			}
-		}
-	}
+	LoadData(CurrentLevel,CurrentSkill,CurrentWeapon);
 	
-	LoadData(0,1,1);
 }
 
 
@@ -104,6 +70,7 @@ void AAPlayer::SwitchSkill(int32 Index)
 		{
 			ActiveSkillComp->SetComponentTickEnabled(true);
 		}
+		CurrentSkill = Index;
 
 		UE_LOG(LogTemp, Log, TEXT("스킬 교체 완료: %s"), *ActiveSkillComp->GetName());
 	}
@@ -111,45 +78,67 @@ void AAPlayer::SwitchSkill(int32 Index)
 
 void AAPlayer::SwitchWeapon(int32 Index)
 {
-	if (!MyWeaponInventory.IsValidIndex(Index) || !MyWeaponInventory[Index])
+	if (!WeaponBlueprintClasses.IsValidIndex(Index) || !WeaponBlueprintClasses[Index])
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[SwitchWeapon] 유효하지 않은 인덱스이거나 무기가 비어있습니다."));
 		return;
 	}
 
-	if (ChildActor)
+	UClass* SpawnClass = WeaponBlueprintClasses[Index];
+	if (!SpawnClass)
 	{
-		AGunBase* TargetWeaponData = MyWeaponInventory[Index];
-		if (TargetWeaponData)
+		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] %d 번 인덱스의 블루프린트 에셋이 기어코 None입니다!"), Index);
+		return;
+	}
+	// 1. 기존 무기 및 컴포넌트 내부 액터가 있다면 확실하게 제거
+	if (EquipedGun)
+	{
+		EquipedGun->Destroy();
+		EquipedGun = nullptr;
+	}
+	if (ChildActors)
+	{
+		ChildActors->SetChildActorClass(nullptr); 
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	EquipedGun = GetWorld()->SpawnActor<AGunBase>(
+	   SpawnClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+
+	if (EquipedGun && GetMesh() && ChildActors)
+	{
+		EquipedGun->SetActorEnableCollision(false);
+		EquipedGun->SetOwner(this);
+       
+		// 3. 무기를 손 소켓에 딱 붙여줍니다.
+		EquipedGun->AttachToComponent(
+		   GetMesh(),
+		   FAttachmentTransformRules::SnapToTargetIncludingScale,
+		   TEXT("GripPoint")
+		);
+       
+		EquipedGun->SetActorRelativeLocation(FVector::ZeroVector);
+		EquipedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+
+		ChildActors->SetChildActorClass(WeaponBlueprintClasses[Index]); // 클래스 타입 갱신
+
+		if (ChildActors)
 		{
-			ChildActor->SetChildActorClass(TargetWeaponData->GetClass());
-			EquipedGun = Cast<AGunBase>(ChildActor->GetChildActor());
-
-			if (EquipedGun && GetMesh())
-			{
-				ChildActor->AttachToComponent(
-					GetMesh(),
-					FAttachmentTransformRules::SnapToTargetIncludingScale,
-					TEXT("GripPoint")
-				);
-				EquipedGun->SetActorEnableCollision(false);
-				EquipedGun->SetOwner(this);
-				
-				EquipedGun->SetBulletLevel(TargetWeaponData->GetBulletLevel());
-				EquipedGun->SetMagazineLevel(TargetWeaponData->GetMagazineLevel());
-				EquipedGun->SetScopeLevel(TargetWeaponData->GetScopeLevel());
-				EquipedGun->SetGripLevel(TargetWeaponData->GetGripLevel());
-				
-				EquipedGun->SetRelicBonus(TargetWeaponData->GetRelicBonus());
-				EquipedGun->SetTotalBonus(TargetWeaponData->GetTotalBonus());
-				EquipedGun->SetCritMultiplier(TargetWeaponData->GetCritMultiplier());
-             
-				// 수치들이 복사되었으니 새 총에서 스펙을 재계산(LoadData)하게 만듭니다.
-				EquipedGun->LoadData(); 
-
-				UE_LOG(LogTemp, Log, TEXT("무기교체 완료 및 데이터 동기화 성공!"));
-			}
+			ChildActors->SetChildActorClass(SpawnClass);
 		}
+		EquipedGun->LoadData();
+		CurrentWeapon = Index;
+
+		UE_LOG(LogTemp, Log, TEXT("🔥 완벽한 융합 성공! C++ 자식 다형성 보장 및 컴포넌트 동기화 완료! 클래스: %s"), *EquipedGun->GetClass()->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] ChildActor를 AGunBase 타입으로 형변환(Cast)하는데 실패했습니다."));
 	}
 }
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -188,52 +177,52 @@ void AAPlayer::Look(const FInputActionValue& Value)
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
 	
-	if (EquipedGun->CanReload())
+	if (EquipedGun &&EquipedGun->CanReload())
 	{
-		// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-		// 2. 애님 인스턴스와 우리가 에디터에서 등록할 몽타주 에셋이 모두 안전하게 존재할 때만 실행합니다.
 		if (AnimInstance && ReloadMontage)
 		{
-			if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
-			{
-				// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
-				AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
-			}
+			AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
 		}
 	}
 }
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
+	if (!EquipedGun)
+	{
+		return;
+	}
+	
 	if (EquipedGun && EquipedGun->HasAmmo())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+
 		if (AnimInstance && ShootMontage)
 		{
-			if (!AnimInstance->Montage_IsPlaying(ShootMontage))
-			{
-				FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
-				FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
-				AnimInstance->Montage_Play(ShootMontage, 1.0f);
-				EquipedGun->FireGun(CameraLocation,CameraForward);
-				
-				float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
-				RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
+			FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+			AnimInstance->Montage_Play(ShootMontage, 1.0f);
+			EquipedGun->FireGun(CameraLocation,CameraForward);
 			
-				if (PController)
+				
+			float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
+			RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			
+			if (PController)
+			{
+				if (!bIsRecoveringRecoil)
 				{
-					if (!bIsRecoveringRecoil)
-					{
-						UpRecoilTargetRotation = PController->GetControlRotation();
-						SetActorTickEnabled(true);
+					UpRecoilTargetRotation = PController->GetControlRotation();
+					SetActorTickEnabled(true);
 
-					}
-					TargetRotation = PController->GetControlRotation();
-					FRotator RecoilRot = TargetRotation	;
-					RecoilRot.Pitch += FinalRecoilPitch; 
-					PController->SetControlRotation(RecoilRot);
-					bIsRecoveringRecoil = true;
 				}
+				TargetRotation = PController->GetControlRotation();
+				FRotator RecoilRot = TargetRotation	;
+				RecoilRot.Pitch += FinalRecoilPitch; 
+				PController->SetControlRotation(RecoilRot);
+				bIsRecoveringRecoil = true;
+					
+				LevelUpStat();
 			}
 		}
 	}
@@ -325,24 +314,54 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 void AAPlayer::LoadData(int32 GetLevel, int32 GetSkill, int32 GetWeapon)
 {
-	SwitchSkill(GetSkill);
-	SwitchWeapon(GetWeapon);
 	CurrentLevel = GetLevel;
-	MagnetComp->SetSphereRadius(MagnetRadius);
-	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
+	CurrentWeapon = GetWeapon;
+	CurrentSkill = GetSkill;
 	
+	for (USkillBaseComp* Skill : MySkillInventory)
+	{
+		if (Skill)
+		{
+			Skill->DestroyComponent();
+		}
+	}
+	MySkillInventory.Empty();
+	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
+	{
+		if (!SkillClass) continue;
+
+		USkillBaseComp* NewSkill =
+			NewObject<USkillBaseComp>(this, SkillClass);
+
+		if (NewSkill)
+		{
+			NewSkill->RegisterComponent();
+			NewSkill->SetComponentTickEnabled(false);
+			MySkillInventory.Add(NewSkill);
+		}
+	}
+	
+	SwitchSkill(GetSkill);
+	
+	SwitchWeapon(GetWeapon);
+	if (MagnetComp)
+	{
+		MagnetComp->SetSphereRadius(MagnetRadius);
+	}
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
+	}
 	AddMaxHp(0);
 	AddPlayerSpeed(0);
 }
 void AAPlayer::SaveData()
 {
-	/*
-	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
 	if (MasterSubsystem)
 	{
-		MasterSubsystem->OnSavePlayer.Broadcast(CurrentHp);
+		MasterSubsystem->OnSavePlayer.Broadcast(CurrentLevel,CurrentSkill,CurrentWeapon);
 	}
-	 */
 }
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
@@ -392,13 +411,9 @@ void AAPlayer::AddExp(int32 Add_Exp)
 }
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
 {
-	if (ChildActor)
+	if (EquipedGun)
 	{
-		if (!EquipedGun)
-		{
-			return;
-		}
-		EquipedGun->AddDamage(AddRelicBonus,TotalBonus,Critical);
+		EquipedGun->AddDamage(AddRelicBonus, TotalBonus, Critical);
 	}
 }
 void AAPlayer::LevelUpStat()
@@ -420,14 +435,14 @@ void AAPlayer::DecreaseSkillCoolTime(float SkillCoolTime)
 
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
-	if (ChildActor && EquipedGun)
+	if (EquipedGun)
 	{
 		EquipedGun->SelectParts(PartsType);
-	} 
+	}
 }		
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
-	if (ChildActor && EquipedGun)
+	if (EquipedGun)
 	{
 		return EquipedGun->GetPartsData(PartsType);
 	}
