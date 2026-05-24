@@ -29,22 +29,30 @@ ABossPlasmaOrb::ABossPlasmaOrb()
 void ABossPlasmaOrb::BeginPlay()
 {
     Super::BeginPlay();
-    CurrentHealth = MaxHealth;
+    CurrentHitCount = MaxHitCount;
 }
 
 float ABossPlasmaOrb::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
     float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
-    CurrentHealth -= ActualDamage;
-    
-    if (CurrentHealth <= 0.0f)
+    if (ActualDamage > 0.0f && DamageCauser)
     {
-        OnReadyToReturn.Broadcast(this);
+        CurrentHitCount--;
+
+
+        GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, FString::Printf(TEXT("Orb Raycast Hit! Remaining: %d"), CurrentHitCount));
+
+
+        if (CurrentHitCount <= 0)
+        {
+            OnReadyToReturn.Broadcast(this);
+        }
     }
 
     return ActualDamage;
 }
+
 void ABossPlasmaOrb::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
     // 부딪힌 대상이 없거나 나 자신이면 크래시 방지를 위해 리턴
@@ -68,6 +76,7 @@ void ABossPlasmaOrb::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
         }
         DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 5, FColor::Green, false, 3.f);
     }
+    
     OnReadyToReturn.Broadcast(this);
 }
 
@@ -75,7 +84,7 @@ void ABossPlasmaOrb::OnSpawnFromPool(const FTransform& Transform)
 {
     SetActorTransform(Transform);
     
-    CurrentHealth = MaxHealth;
+    CurrentHitCount = MaxHitCount;
     SetActorHiddenInGame(false);
     SetActorEnableCollision(true);
 

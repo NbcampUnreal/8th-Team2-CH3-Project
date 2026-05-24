@@ -30,6 +30,8 @@ public:
 	//스텟 컴포넌트 읽기
 	FORCEINLINE class UMonsterStatComponent* GetStatComponent() const { return StatComp; }
 	
+	UFUNCTION(BlueprintCallable)
+	void PlayDeathAnim();
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UMonsterStatComponent* StatComp;
@@ -48,6 +50,10 @@ protected:
 	UFUNCTION()
 	void DropExpItem();
 	
+	
+	UPROPERTY(EditAnywhere,Category = "Animation")
+	UAnimMontage* DeathMontage;
+
 	virtual void OnSpawnFromPool(const FTransform& Transform) override;
 	virtual void OnReturnToPool() override;
 };
