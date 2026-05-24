@@ -4,7 +4,9 @@
 #include "RelicData.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
+#include "RelicApplyManager.h"
 #include "RelicManager.generated.h"
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRelicRewardGeneratedSignature, const TArray<FRelicData>&, RewardChoices);
 
@@ -16,9 +18,8 @@ class ARelicManager : public AActor
 public:
 	ARelicManager();
 	
-	//중복 일반,희귀만 가능 + 플레이어가 현재가지고 있는 유물 배열
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Relic")
-	TArray<FRelicData> OwnedRelics;
+	//플레이어가 현재가지고 있는 유물 배열
+	TArray<TPair<int32,bool>> OwnedRelicIDs;
 	//에픽 레전드는 여기에 아이디 저장으로 중복 방지
 	UPROPERTY()
 	TSet<int32> BlockedRelicIDs;
@@ -41,8 +42,15 @@ public:
 	UPROPERTY(EditAnywhere,Category = "Relic")
 	UDataTable* RelicDataTable;
 	
-	void BeginPlay() override;
+	UPROPERTY(EditAnywhere, Category = "Relic")
+	TSubclassOf<ARelicApplyManager> ApplyManagerClass;
+	
+	UPROPERTY()
+	ARelicApplyManager* ApplyManager;
+	
 	void RandomRelic();
+	
+	void TossRelicIDs(const TArray<int32>& SaveRelicIDs);
 
 	UFUNCTION(BlueprintCallable, Category = "Relic")
 	void OnEliteMonsterDead();
@@ -51,6 +59,10 @@ public:
 	FOnRelicRewardGeneratedSignature OnRelicRewardGenerated;
 	
 	ERelicGrade NormalRollGrade();
+	
+protected:
+	
+	virtual void BeginPlay() override;
 	
 };
 
