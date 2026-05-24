@@ -8,6 +8,7 @@
 class UBoxComponent;
 class UStaticMeshComponent;
 class USceneComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class CH3_TEAM2_API AHealTotem : public AActor, public IPoolable
@@ -46,7 +47,10 @@ private:
 	UBoxComponent* CollisionBox;
 	
 	UPROPERTY(EditAnywhere, Category = "DesignSettings")
-	int32 HealAmount = 50;
+	UNiagaraSystem* DisappearEffect;
+	
+	UPROPERTY(EditAnywhere, Category = "DesignSettings")
+	int32 HealAmount = 20;
 	
 	UPROPERTY()
 	FOnReadyToReturn ReadyToReturn;

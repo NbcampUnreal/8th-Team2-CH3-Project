@@ -4,6 +4,7 @@
 #include "Components/SceneComponent.h"
 #include "APlayer.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 AHealTotem::AHealTotem()
 {
@@ -107,7 +108,17 @@ void AHealTotem::Interact(AActor* Interactor)
 		Player->AddCurrentHp(HealAmount);
         // Test Log
 		UE_LOG(LogTemp, Warning, TEXT("[HealTotem] 상호작용 완료! 플레이어에게 %d 힐 전송 후 토템 파괴"), HealAmount);
-        
+		
+		if (DisappearEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				DisappearEffect,
+				GetActorLocation(),
+				GetActorRotation()
+			);
+		}
+		
 		// 사용된 토템을 브로드캐스트로 보내 줌
 		ReadyToReturn.Broadcast(this);
 	}
