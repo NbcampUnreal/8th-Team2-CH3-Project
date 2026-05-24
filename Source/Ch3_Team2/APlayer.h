@@ -162,25 +162,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<AGunBase*> MyWeaponInventory;
 	
-	// 🔥 [핵심] 에디터 디테일 패널에서 무기 블루프린트(BP)들을 마우스 클릭으로 등록하는 배열
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<TSubclassOf<AGunBase>> WeaponBlueprintClasses;
-	// 원할 때 인덱스 번호만 넘겨서 무기를 바꾸는 함수
+	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwitchWeapon(int32 Index);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	USkillBaseComp* ActiveSkillComp;
 	
-	// 에디터 디테일 패널에서 가질 수 있는 스킬 블루프린트(컴포넌트) 클래스들을 등록하는 배열
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
 	TArray<TSubclassOf<USkillBaseComp>> SkillBlueprintClasses;
 
-	// 실시간으로 생성된 스킬 인스턴스들을 보관할 인벤토리 배열
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Skill")
 	TArray<USkillBaseComp*> MySkillInventory;
 	
-	// 인덱스 번호를 넘겨서 스킬을 실시간으로 바꾸는 함수
 	UFUNCTION(BlueprintCallable, Category = "Skill")
 	void SwitchSkill(int32 Index);
 	
@@ -197,7 +193,6 @@ public:
 	
 	bool bIsRecoveringRecoil = false;
 	
-	// 반동 복구 속도 (값이 클수록 빠르게 원래대로 돌아옵니다)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|Recoil")
 	float RecoilRecoverySpeed = 3.0f;
 	

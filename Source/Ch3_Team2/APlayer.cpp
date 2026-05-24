@@ -73,24 +73,19 @@ void AAPlayer::BeginPlay()
 	}
 	
 	PController = Cast<APlayerController>(GetController());
-	// 🔥 2. [스킬 인벤토리 생성]
-	// 런타임 스왑 시 버벅임(지연)을 방지하기 위해 클래스 배열을 순회하며 미리 인스턴스를 생성해 둡니다.
 	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
 	{
 		if (SkillClass)
 		{
-			// Outer를 이 플레이어(this)로 지정하여 컴포넌트를 생성합니다.
 			USkillBaseComp* NewSkill = NewObject<USkillBaseComp>(this, SkillClass);
 			if (NewSkill)
 			{
-				// 생성 직후에는 액터에 완전히 등록하지 않고(Tick 정지) 인벤토리에만 보관합니다.
 				NewSkill->SetComponentTickEnabled(false);
 				MySkillInventory.Add(NewSkill);
 			}
 		}
 	}
 	
-	// 게임 시작 시 0번째 스킬을 기본 스킬로 장착합니다.
 	if (MySkillInventory.IsValidIndex(2))
 	{
 		SwitchSkill(2);
@@ -106,10 +101,8 @@ void AAPlayer::SwitchSkill(int32 Index)
 		return;
 	}
 
-	// 기존에 사용 중이던 스킬이 있다면 정리 작업을 해줍니다.
 	if (ActiveSkillComp)
 	{
-		// 쿨다운 중이거나 효과 발동 중인 틱을 끄고 액터 레이어에서 해제(Unregister)합니다.
 		ActiveSkillComp->SetComponentTickEnabled(false);
 		ActiveSkillComp->UnregisterComponent();
 	}
@@ -306,7 +299,6 @@ void AAPlayer::NotifyControllerChanged()
 }
 void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
@@ -376,7 +368,6 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 	{	
 		if (MoveSpeed + Add_Speed > 0.0f )
 		{
-			// Relic Speed는 RelicEffectBase 수정될 떄까지 일단 킵
 			RelicBonusSpeed += Add_Speed;
 			MoveSpeed = BaseMoveSpeed + CurrentLevel*SpeedIncrease + RelicBonusSpeed; 
 			MoveComp->MaxWalkSpeed = MoveSpeed;
@@ -434,8 +425,6 @@ FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 	{
 		return EquipedGun->GetPartsData(PartsType);
 	}
-    
-	// 무기가 없다면 텅 빈 구조체 반환
 	return FGunParts();
 }	
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
