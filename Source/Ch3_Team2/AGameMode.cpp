@@ -21,7 +21,7 @@ void AAGameMode::BeginPlay()
 	AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AAPlayer::StaticClass()));
 	AGunBase* Gun = Cast<AGunBase>(UGameplayStatics::GetActorOfClass(GetWorld(), AGunBase::StaticClass()));
 	
-	// 순서 보장하면서 값만 넘겨줌
+	// TODO: 순서 보장하면서 값만 넘기기
 	// Relic->LoadData(SaveSubsystem->RelicIds);
 	Player->LoadData(SaveSubsystem->GetPlayerLevel());
 	// Gun->LoadData();

@@ -104,11 +104,15 @@ void USaveSubsystem::OnMasterSaveTime(int32 StageIndex, float ClearTime)
 void USaveSubsystem::OnMasterSaveRelic(TArray<int32> RelicIDs)
 {
     CurrentSave->RelicIDs = RelicIDs;
+    
+    SaveGame();
 }
 
 void USaveSubsystem::OnMasterSavePlayer(int32 PlayerLevel)
 {
     CurrentSave->PlayerLevel = PlayerLevel;
+    
+    SaveGame();
 }
 
 void USaveSubsystem::OnMasterSaveGun(int32 GripLevel, int32 ScopeLevel, int32 MagazineLevel, int32 BulletLevel)
@@ -117,4 +121,6 @@ void USaveSubsystem::OnMasterSaveGun(int32 GripLevel, int32 ScopeLevel, int32 Ma
     CurrentSave->ScopeLevel    = ScopeLevel;
     CurrentSave->MagazineLevel = MagazineLevel;
     CurrentSave->BulletLevel   = BulletLevel;
+    
+    SaveGame();
 }

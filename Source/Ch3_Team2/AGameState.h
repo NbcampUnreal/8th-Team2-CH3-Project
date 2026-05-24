@@ -22,7 +22,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
+	void BroadcastSaveTime() const;
+
 private:
 	float PlayTime = 0.0f;
 	bool bIsTracking = false;
