@@ -102,7 +102,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	int32 LevelUpExp = 200;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	int32 Level = 0;
+	int32 CurrentLevel = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed = 1000.0f;
 	
@@ -121,11 +121,13 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	UObject* SkillInstance;
 	
+	void LoadData(int32 GetLevel);
+	
 	// Setter
 	void SetRelicHp(int32 Set_Hp) { RelicBonusHp = Set_Hp;}
 	void SetRelicSpeed(float Set_RelicSpeed){RelicBonusSpeed = Set_RelicSpeed;}
 	void SetExp(int32 Set_Exp) {Exp = Set_Exp;}
-	void SetLevel(int32 Set_Level) { Level = Set_Level;}
+	void SetLevel(int32 Set_Level) { CurrentLevel = Set_Level;}
 	
 	FORCEINLINE void SetCurrentStructure(class AHealTotem* NewStructure) 
 	{ CurrentTargetStructure = NewStructure; }
@@ -134,7 +136,7 @@ public:
 	int32 GetMapHp() const {return MaxHp;}
 	float GetSpeed() const {return MoveSpeed;}
 	int32 GetExp() const {return Exp;}
-	int32 GetLevel() const {return Level;}
+	int32 GetCurrentLevel() const {return CurrentLevel;}
 	
 	// OverDrive용으로 사용됩니다.
 	float GetTotalSpeed() const {return MoveSpeed;}
@@ -152,6 +154,7 @@ public:
 	void DegreaseSkillCoolTime(float SkillCoolTime);
 	void LevelUpStat();
 	void OnDeath();
+	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RecoilControll")
 	APlayerController* PController;
