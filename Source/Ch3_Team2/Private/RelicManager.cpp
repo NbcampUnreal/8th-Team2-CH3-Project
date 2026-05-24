@@ -1,6 +1,11 @@
 #include "RelicManager.h"
+
+#include "MonsterBase.h"
+#include "MonsterProjectile.h"
+#include "MonsterStatComponent.h"
 #include "Ch3_Team2/APlayer.h"
 #include "Kismet/GameplayStatics.h"
+#include "Ch3_Team2/Data/MasterSubsystem.h"
 
 
 
@@ -9,10 +14,13 @@ ARelicManager::ARelicManager()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-
 void ARelicManager::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ARelicManager::LodeData(TArray<int32> RelicIDs)
+{
 	
 	ApplyManager = GetWorld()->SpawnActor<ARelicApplyManager>(ApplyManagerClass);
 	
@@ -38,6 +46,35 @@ void ARelicManager::BeginPlay()
 		
 		AllRelics.Add(*RelicPtr);
 	}
+	
+	if (RelicIDs.Num() == 0)
+	{
+		return;
+	}
+	
+	OwnedRelicIDs.Empty();
+	
+	for (int32 RelicID : RelicIDs)
+	{
+		OwnedRelicIDs.Add({RelicID, false});
+	}
+}
+
+void ARelicManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{ 
+	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if (MasterSubsystem)
+	{
+		TArray<int32> PureRelicIDs;
+		
+		for (const TPair<int32, bool>& Pair : OwnedRelicIDs)
+		{
+			PureRelicIDs.Add(Pair.Key);
+		}
+		MasterSubsystem->OnSaveRelic.Broadcast(PureRelicIDs);
+	}
+	
+	Super::EndPlay(EndPlayReason);
 }
 
 void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
@@ -56,6 +93,7 @@ void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
 	}
 	
 	ApplyManager->ApplyRelicById(OwnedRelicIDs);
+	
 }
 
 ERelicGrade ARelicManager::NormalRollGrade()
@@ -130,28 +168,6 @@ bool ARelicManager::GetRandomRelicByGrade(
 	return true;
 }
 
-void ARelicManager::OnEliteMonsterDead()
-{
-	RandomRelic();
-	
-	if (OnRelicRewardGenerated.IsBound())
-	{
-		OnRelicRewardGenerated.Broadcast(RandomRelicOption);
-	}
-}
 
-void ARelicManager::TossRelicIDs(const TArray<int32>& SaveRelicIDs)
-{
-	if (SaveRelicIDs.Num() == 0)
-	{
-		return;
-	}
-	
-	OwnedRelicIDs.Empty();
-	
-	for (int32 RelicID : SaveRelicIDs)
-	{
-		OwnedRelicIDs.Add({RelicID, false});
-	}
-	
-}
+
+

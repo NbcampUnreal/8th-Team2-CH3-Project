@@ -9,6 +9,7 @@
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRelicRewardGeneratedSignature, const TArray<FRelicData>&, RewardChoices);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEliteMonsterDeathSignature, const AActor*, DeathActor);
 
 UCLASS()
 class ARelicManager : public AActor
@@ -50,20 +51,21 @@ public:
 	
 	void RandomRelic();
 	
-	void TossRelicIDs(const TArray<int32>& SaveRelicIDs);
-
-	UFUNCTION(BlueprintCallable, Category = "Relic")
-	void OnEliteMonsterDead();
-	
 	UPROPERTY(BlueprintAssignable, Category = "Relic")
 	FOnRelicRewardGeneratedSignature OnRelicRewardGenerated;
 	
 	ERelicGrade NormalRollGrade();
 	
+	void LodeData(TArray<int32> RelicIDs);
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	UPROPERTY()
+	class UMasterSubsystem* MasterSubsystem;;
+	
 protected:
 	
 	virtual void BeginPlay() override;
-	
 };
 
 
