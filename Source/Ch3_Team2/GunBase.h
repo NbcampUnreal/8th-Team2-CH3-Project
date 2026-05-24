@@ -13,6 +13,7 @@ class CH3_TEAM2_API AGunBase : public AWeaponBase
 	GENERATED_BODY()
 
 public:
+	AGunBase();
 	void InitializeParts();
 	bool HasAmmo();
 	bool CanReload();
@@ -21,38 +22,51 @@ public:
 	void Reloading();
 	virtual void FireGun(FVector Location, FVector Direction);
 	
+	
 	// RPM ( 연사 속도 )시간 끝내는함수 
-	void HandleFireDelay();
+	void GripFireDelay();
 	void AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical);
 	
 	void BattleIn(const FHitResult& HitResult);
 	
-	void UpdateWeaponStats();
 	
 	void AddAmmo(float AddAmmo){MaxAmmo +=AddAmmo;}
 	void AddCritical(float Critical){CritMultiplier += Critical;}
 	
 	void DecreaseReloadTimeStat(float AddReload);
+	
+	void LoadData();
+	void SaveData();
 	//set
 	void SetBulletLevel(int32 Level){Bullet.Level = Level;}
 	void SetMagazineLevel(int32 Level){Magazine.Level = Level;}
 	void SetScopeLevel(int32 Level){Scope.Level = Level;}
-	void SetHandleLevel(int32 Level){Handle.Level = Level;}
+	void SetGripLevel(int32 Level){Grip.Level = Level;}
+	
+	void SetRelicBonus(float SetBonus){RelicBonus = SetBonus;}
+	void SetTotalBonus(float SetBonus){TotalBonus = SetBonus;}
+	void SetCritMultiplier(float SetBonus){CritMultiplier = SetBonus;}
+	
+	float GetRelicBonus()const{return RelicBonus;}
+	float GetTotalBonus()const{return TotalBonus;}
+	float GetCritMultiplier()const{return CritMultiplier;}
+		
 	//get
 	int32 GetCurrentAmmo()const{return CurrentAmmo;}
 	int32 GetMaxAmmo()const{return MaxAmmo;}
 	float GetReloadSpeed()const{return ReloadTime;}
 	
-	int32 GetHandleLevel()const{return Handle.Level;}
+	int32 GetGripLevel()const{return Grip.Level;}
 	int32 GetScopeLevel()const{return Scope.Level;}
 	int32 GetMagazineLevel()const{return Magazine.Level;}
 	int32 GetBulletLevel()const{return Bullet.Level;}
+	
 	//const
 	const int32 MaxLevelParts = 4;
 	const float LevelUpDamageValue = 0.25f;
 	const float LevelUpReloadValue = 0.15f;
 	const float LevelUpScopeValue = 0.2f;
-	const float LevelUpHandleValue =0.2f;
+	const float LevelUpGripValue =0.2f;
 	
 	// 집탄률
 	float SpreadAngle = 0;
@@ -71,7 +85,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Scope;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
-	FGunParts Handle;
+	FGunParts Grip;
 	
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Parts")
 	void SelectParts(EPartsName parts);
@@ -85,6 +99,7 @@ public:
 	// [추가] 핸들 파츠(반동 감소) 스탯이 반영된 최종 반동 값을 반환하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Recoil")
 	float GetCurrentRecoilPitch() const;
+	
 	
 protected:
 	virtual void BeginPlay() override;

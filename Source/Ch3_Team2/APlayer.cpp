@@ -1,10 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "APlayer.h"
-
 #include "SkillBaseComp.h"
-
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -17,6 +13,7 @@
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Prop/HealTotem.h"
+
 
 // Sets default values
 AAPlayer::AAPlayer()
@@ -37,38 +34,121 @@ AAPlayer::AAPlayer()
 	
 	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
 	MagnetComp->SetupAttachment(RootComponent);
-	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
-	DropExpComp->SetupAttachment(MagnetComp);
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 	CurrentTargetStructure = nullptr;
 }
 
 void AAPlayer::BeginPlay()
 {
-	
 	Super::BeginPlay();
 	
-	MagnetComp->SetSphereRadius(MagnetRadius);
-	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
-	
-	PController = Cast<APlayerController>(GetController());
-	EquipedGun = Cast<AGunBase>(ChildActor->GetChildActor());
-	
-	if (ChildActor && GetMesh())
+	if (GetWorld())
 	{
-		ChildActor->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			TEXT("GripPoint") // 사용할 소켓 이름
-		);
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = GetInstigator();
+
+		for (TSubclassOf<AGunBase> WeaponClass : WeaponBlueprintClasses)
+		{
+			if (WeaponClass)
+			{
+				AGunBase* NewWeapon = GetWorld()->SpawnActor<AGunBase>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+                
+				if (NewWeapon)
+				{
+					NewWeapon->SetActorHiddenInGame(true);
+					NewWeapon->SetActorEnableCollision(false);
+                    
+					MyWeaponInventory.Add(NewWeapon);
+				}
+			}
+		}
+	}
+	PController = Cast<APlayerController>(GetController());
+	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
+	{
+		if (SkillClass)
+		{
+			USkillBaseComp* NewSkill = NewObject<USkillBaseComp>(this, SkillClass);
+			if (NewSkill)
+			{
+				NewSkill->SetComponentTickEnabled(false);
+				MySkillInventory.Add(NewSkill);
+			}
+		}
 	}
 	
-	if (SkillComp)
+	LoadData(0,1,1);
+}
+
+
+void AAPlayer::SwitchSkill(int32 Index)
+{
+	if (!MySkillInventory.IsValidIndex(Index) || !MySkillInventory[Index])
 	{
-		SkillInstance = NewObject<USkillBaseComp>(this, SkillComp);
-		if (USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance))
+		UE_LOG(LogTemp, Warning, TEXT("[SwitchSkill] 유효하지 않은 스킬 인덱스이거나 스킬이 비어있습니다."));
+		return;
+	}
+
+	if (ActiveSkillComp)
+	{
+		ActiveSkillComp->SetComponentTickEnabled(false);
+		ActiveSkillComp->UnregisterComponent();
+	}
+
+	ActiveSkillComp = MySkillInventory[Index];
+	if (ActiveSkillComp)
+	{
+		ActiveSkillComp->RegisterComponent();
+		if (ActiveSkillComp->CurrentSkillCoolTime > 0.0f)
 		{
-			Skill->RegisterComponent();
+			ActiveSkillComp->SetComponentTickEnabled(true);
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("스킬 교체 완료: %s"), *ActiveSkillComp->GetName());
+	}
+}
+
+void AAPlayer::SwitchWeapon(int32 Index)
+{
+	if (!MyWeaponInventory.IsValidIndex(Index) || !MyWeaponInventory[Index])
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SwitchWeapon] 유효하지 않은 인덱스이거나 무기가 비어있습니다."));
+		return;
+	}
+
+	if (ChildActor)
+	{
+		AGunBase* TargetWeaponData = MyWeaponInventory[Index];
+		if (TargetWeaponData)
+		{
+			ChildActor->SetChildActorClass(TargetWeaponData->GetClass());
+			EquipedGun = Cast<AGunBase>(ChildActor->GetChildActor());
+
+			if (EquipedGun && GetMesh())
+			{
+				ChildActor->AttachToComponent(
+					GetMesh(),
+					FAttachmentTransformRules::SnapToTargetIncludingScale,
+					TEXT("GripPoint")
+				);
+				EquipedGun->SetActorEnableCollision(false);
+				EquipedGun->SetOwner(this);
+				
+				EquipedGun->SetBulletLevel(TargetWeaponData->GetBulletLevel());
+				EquipedGun->SetMagazineLevel(TargetWeaponData->GetMagazineLevel());
+				EquipedGun->SetScopeLevel(TargetWeaponData->GetScopeLevel());
+				EquipedGun->SetGripLevel(TargetWeaponData->GetGripLevel());
+				
+				EquipedGun->SetRelicBonus(TargetWeaponData->GetRelicBonus());
+				EquipedGun->SetTotalBonus(TargetWeaponData->GetTotalBonus());
+				EquipedGun->SetCritMultiplier(TargetWeaponData->GetCritMultiplier());
+             
+				// 수치들이 복사되었으니 새 총에서 스펙을 재계산(LoadData)하게 만듭니다.
+				EquipedGun->LoadData(); 
+
+				UE_LOG(LogTemp, Log, TEXT("무기교체 완료 및 데이터 동기화 성공!"));
+			}
 		}
 	}
 }
@@ -158,7 +238,6 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 		}
 	}
 }
-
 void AAPlayer::Interact(const FInputActionValue& Value)
 {
 	if (CurrentTargetStructure)
@@ -172,7 +251,6 @@ void AAPlayer::Interact(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Warning, TEXT("[Player] 주변에 상호작용 가능한 토템이 없습니다."));
 	}
 }
-
 void AAPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -198,7 +276,7 @@ void AAPlayer::Tick(float DeltaTime)
 				0.05f) && RecoilRecoveryRotation <= 0)
 			{
 				bIsRecoveringRecoil = false;
-				SetActorTickEnabled(true);
+				SetActorTickEnabled(false);
 				
 			}
 		}
@@ -207,9 +285,9 @@ void AAPlayer::Tick(float DeltaTime)
 }
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
-	if (USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance))
+	if (ActiveSkillComp)
 	{
-		Skill->ActiveSkill();
+		ActiveSkillComp->ActiveSkill();
 	}
 }
 void AAPlayer::NotifyControllerChanged()
@@ -225,7 +303,6 @@ void AAPlayer::NotifyControllerChanged()
 }
 void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
@@ -246,14 +323,27 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		
 	}
 }
-
-void AAPlayer::LoadData(int32 GetLevel)
+void AAPlayer::LoadData(int32 GetLevel, int32 GetSkill, int32 GetWeapon)
 {
+	SwitchSkill(GetSkill);
+	SwitchWeapon(GetWeapon);
 	CurrentLevel = GetLevel;
+	MagnetComp->SetSphereRadius(MagnetRadius);
+	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
+	
 	AddMaxHp(0);
 	AddPlayerSpeed(0);
 }
-
+void AAPlayer::SaveData()
+{
+	/*
+	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if (MasterSubsystem)
+	{
+		MasterSubsystem->OnSavePlayer.Broadcast(CurrentHp);
+	}
+	 */
+}
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Current HP: %d , Add HP: %d"),CurrentHp, Add_Hp);
@@ -284,7 +374,6 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 	{	
 		if (MoveSpeed + Add_Speed > 0.0f )
 		{
-			// Relic Speed는 RelicEffectBase 수정될 떄까지 일단 킵
 			RelicBonusSpeed += Add_Speed;
 			MoveSpeed = BaseMoveSpeed + CurrentLevel*SpeedIncrease + RelicBonusSpeed; 
 			MoveComp->MaxWalkSpeed = MoveSpeed;
@@ -320,20 +409,21 @@ void AAPlayer::LevelUpStat()
 	LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 	AddPlayerSpeed(0);
 }
-void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
+void AAPlayer::DecreaseSkillCoolTime(float SkillCoolTime)
 {
-	if (SkillInstance)
+	if (ActiveSkillComp)
 	{
-		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
+		USkillBaseComp* Skill = Cast<USkillBaseComp>(ActiveSkillComp);
 		Skill->	DecreaseTimeSkill(SkillCoolTime);
 	}
 }
+
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
 	if (ChildActor && EquipedGun)
 	{
 		EquipedGun->SelectParts(PartsType);
-	}
+	} 
 }		
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
@@ -341,8 +431,6 @@ FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 	{
 		return EquipedGun->GetPartsData(PartsType);
 	}
-    
-	// 무기가 없다면 텅 빈 구조체 반환
 	return FGunParts();
 }	
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
@@ -370,4 +458,3 @@ void AAPlayer::OnDeath()
 	// 사망 로그 호출
 	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
 }
-

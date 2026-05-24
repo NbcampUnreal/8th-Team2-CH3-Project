@@ -9,4 +9,5 @@ void AGunShotGun::FireGun(FVector Location, FVector Direction)
 	{
 		Super::FireGun(Location, Direction);
 	}
+	--CurrentAmmo;
 }

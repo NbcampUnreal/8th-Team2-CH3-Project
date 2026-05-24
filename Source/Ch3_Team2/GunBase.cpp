@@ -10,12 +10,11 @@ bool AGunBase::HasAmmo()
 		GetWorld()->GetTimerManager().SetTimer(
 			TimerFireDelay
 			,this
-			,&AGunBase::HandleFireDelay
+			,&AGunBase::GripFireDelay
 			,1.f / RoundsPerSecond
 			,false
 		);
 		CanFire = false;
-		--CurrentAmmo;
 		return true;
 	}
 	return false;
@@ -40,6 +39,8 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 	float SafeSpread = FMath::Max(SpreadAngle, 0.0f);
 	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SafeSpread));
 	FVector End = Location + (SpreadDirection * EffectiveRange);
+	
+	
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
@@ -90,22 +91,19 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 		CritMultiplier
 	);
 }
-
-void AGunBase::UpdateWeaponStats()
+void AGunBase::LoadData()
 {
 	SpreadAngle = FMath::Max(
 		SpreadAngleDegrees -
 		SpreadAngleDegrees * Scope.Level * Scope.Value,
 		0.1f
 	);
-
 	ActiveRecoil = FMath::Max(
 		Recoil -
-		(Recoil * Handle.Level * Handle.Value) +
+		(Recoil * Grip.Level * Grip.Value) +
 		AddedRecoil,
 		0.1f
 	);
-
 	ActiveReload = FMath::Max(
 		ReloadTime -
 		ReloadTime * Magazine.Level * Magazine.Value +
@@ -115,12 +113,22 @@ void AGunBase::UpdateWeaponStats()
 	AddDamage(0,0,0);
 }
 
-void AGunBase::HandleFireDelay()
+void AGunBase::SaveData()
+{
+	/*
+	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if (MasterSubsystem)
+	{
+		MasterSubsystem->OnSaveGun.Broadcast(Grip.Level, Scope.Level, Magazine.Level, Bullet.Level);
+	}
+	 */
+}
+
+void AGunBase::GripFireDelay()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
 	CanFire = true;
 }
-
 void AGunBase::AddDamage(float Add_RelicDamage, float Add_TotalDamage, float Critical)
 {
 	RelicBonus += Add_RelicDamage;
@@ -138,17 +146,16 @@ void AGunBase::SelectParts(EPartsName parts)
 	{
 		++Scope.Level;
 	}
-	else if (parts == EPartsName::Handle && Handle.Level < MaxLevelParts)
+	else if (parts == EPartsName::Handle && Grip.Level < MaxLevelParts)
 	{
-		++Handle.Level;
+		++Grip.Level;
 	}
 	else if (parts == EPartsName::Magazine && Magazine.Level < MaxLevelParts)
 	{
-		++Magazine.Level;
+		++Magazine.Level; 
 	}
-	UpdateWeaponStats();
+	LoadData();
 }
-
 FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 {
 	switch (PartsType)
@@ -167,7 +174,7 @@ FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 		}
 	case EPartsName::Handle:
 		{
-			return Handle;
+			return Grip;
 		}
 	default:
 		{
@@ -183,6 +190,12 @@ void AGunBase::DecreaseReloadTimeStat(float AddReload)
 		ActiveReload = ReloadTime - ReloadTime* Magazine.Level *Magazine.Value +AddReloadTime;
 	}
 }
+
+AGunBase::AGunBase()
+{
+	PrimaryActorTick.bCanEverTick = false;
+}
+
 void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
@@ -200,10 +213,10 @@ void AGunBase::InitializeParts()
 	Scope.Value = LevelUpScopeValue;  
 	Scope.Parts = EPartsName::Scope;
 	
-	Handle.Name = "Handle";
-	Handle.Level = 0;
-	Handle.Value = LevelUpHandleValue;
-	Handle.Parts = EPartsName::Handle;
+	Grip.Name = "Handle";
+	Grip.Level = 0;
+	Grip.Value = LevelUpGripValue;
+	Grip.Parts = EPartsName::Handle;
 }
 float AGunBase::GetCurrentRecoilPitch() const
 {

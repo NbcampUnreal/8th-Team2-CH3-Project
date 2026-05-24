@@ -118,7 +118,7 @@ void ARelicApplyManager::RelicStatUp(float Value, ERelicStatType StatType) const
             break;
         }
     case ERelicStatType::SkillCooldown:
-        Player->DegreaseSkillCoolTime(Value);
+        Player->DecreaseSkillCoolTime(Value);
         break;
     default:
         break;

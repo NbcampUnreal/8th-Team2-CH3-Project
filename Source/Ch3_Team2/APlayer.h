@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "APlayer.generated.h"
 
+enum class EPartsName : uint8;
 class UInputComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
@@ -15,9 +16,9 @@ class UInputMappingContext;
 class USphereComponent;
 struct FInputActionValue;
 class AHealTotem;
-
 class USkillBaseComp;
 class AGunBase;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
@@ -112,16 +113,11 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* MagnetComp; 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
-	USphereComponent* DropExpComp;
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Skill")
-	TSubclassOf<USkillBaseComp> SkillComp;
 	
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
-	UObject* SkillInstance;
 	
-	void LoadData(int32 GetLevel);
+	void LoadData(int32 GetLevel,int32 GetSkill, int32 GetWeapon);
+	void SaveData();
 	
 	// Setter
 	void SetRelicHp(int32 Set_Hp) { RelicBonusHp = Set_Hp;}
@@ -151,9 +147,10 @@ public:
 	void AddPlayerSpeed(float Add_Speed);
 	
 	void TotalDamageUpGrade(float AddRelicBonus, float TotalBonus ,float Critical);
-	void DegreaseSkillCoolTime(float SkillCoolTime);
+	void DecreaseSkillCoolTime(float SkillCoolTime);
 	void LevelUpStat();
 	void OnDeath();
+	
 	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RecoilControll")
@@ -161,6 +158,28 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RecoilControll")
 	AGunBase* EquipedGun;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TArray<AGunBase*> MyWeaponInventory;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TArray<TSubclassOf<AGunBase>> WeaponBlueprintClasses;
+	
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SwitchWeapon(int32 Index);
+	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
+	USkillBaseComp* ActiveSkillComp;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+	TArray<TSubclassOf<USkillBaseComp>> SkillBlueprintClasses;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Skill")
+	TArray<USkillBaseComp*> MySkillInventory;
+	
+	UFUNCTION(BlueprintCallable, Category = "Skill")
+	void SwitchSkill(int32 Index);
+	
 	UFUNCTION(BlueprintCallable, Category = "Player|Upgrade")
 	void UpgradeWeaponParts(EPartsName PartsType);
 
@@ -174,7 +193,6 @@ public:
 	
 	bool bIsRecoveringRecoil = false;
 	
-	// 반동 복구 속도 (값이 클수록 빠르게 원래대로 돌아옵니다)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player|Recoil")
 	float RecoilRecoverySpeed = 3.0f;
 	
