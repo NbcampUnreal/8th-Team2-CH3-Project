@@ -7,6 +7,7 @@
 #include "MonsterAttackComponent.h"
 #include "MonsterStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
 AMonsterBase::AMonsterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,8 +26,8 @@ void AMonsterBase::BeginPlay()
 
 void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+	Super::EndPlay(EndPlayReason);
 }
 
 FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
@@ -60,15 +61,9 @@ void AMonsterBase::DropExpItem()
 
 void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 {
-	//State tree 비활성화
-	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	if (DeathTimerHandle.IsValid())
 	{
-		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
-		{
-			
-			STComp->StopLogic(TEXT("Aborted"));
-			STComp->Deactivate();
-		}
+		return;
 	}
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
@@ -96,7 +91,7 @@ void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 }
 
 void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
-{
+{StatComp->OnDeath.AddUniqueDynamic(this,)
 	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
 	GetCharacterMovement()->StopMovementImmediately();
 	
@@ -114,12 +109,27 @@ void AMonsterBase::OnReturnToPool()
 	SetActorTickEnabled(false);
 	
 	GetCharacterMovement()->StopMovementImmediately();
+	
+	//State tree 비활성화
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
+		{
+			
+			STComp->StopLogic(TEXT("Aborted"));
+			STComp->Deactivate();
+		}
+	}
 }
 
 void AMonsterBase::AfterDeath()
 {
 	// 경험치 아이템 드롭
 	DropExpItem();
+	if (StatComp->GetMonsterTag()== EMonsterGrade::Boss)
+	{
+		SpawnBossPortal();
+	}
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
 	{
@@ -131,5 +141,21 @@ void AMonsterBase::AfterDeath()
 	}
 }
 
+void AMonsterBase::SpawnBossPortal()
+{
+	UWorld* World = GetWorld();
+	if (World && PortalClass)
+	{
+		FVector SpawnLocation = GetActorLocation() + FVector(0.f,0.f,100.f);
+        
+		FRotator SpawnRotation = GetActorRotation();
+        
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = GetInstigator();
+		
+		World->SpawnActor<AActor>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+	}
+}
 
 

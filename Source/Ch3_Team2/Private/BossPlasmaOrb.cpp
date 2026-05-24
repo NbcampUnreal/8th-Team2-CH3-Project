@@ -39,11 +39,9 @@ float ABossPlasmaOrb::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     if (ActualDamage > 0.0f && DamageCauser)
     {
         CurrentHitCount--;
-
-
-        GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Cyan, FString::Printf(TEXT("Orb Raycast Hit! Remaining: %d"), CurrentHitCount));
-
-
+        
+        UE_LOG(LogTemp,Warning,TEXT("Orb Raycast Hit! Remaining: %d"),CurrentHitCount );
+        
         if (CurrentHitCount <= 0)
         {
             OnReadyToReturn.Broadcast(this);

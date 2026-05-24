@@ -33,7 +33,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsDead() const;
 	UFUNCTION()
-	void SetDead(bool Dead){bIsDead=false;};
+	void SetDead(bool Dead){bIsDead=Dead;};
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	float GetCurrentHP() const { return static_cast<float>(Stats.CurrentHP); }
 	UFUNCTION(BlueprintCallable, Category = "Stats")
