@@ -9,9 +9,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnBattleResult,
 	int32, EliteMeleeKills,	int32, EliteRangedKills,
 	int32, BossKills,		int32, GlobalTotalDamage);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCurrencyChanged, int32, NewAmount, int32, Delta);
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveTime, int32, StageIndex, float, ClearTime);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveRelic, TArray<int32>, RelicIDs);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSavePlayer, int32, PlayerLevel);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnSaveGun, int32, GripLevel, int32, ScopeLevel, int32, MagazineLevel, int32, BulletLevel);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameEnd);
 
@@ -25,10 +29,16 @@ public:
 	FOnBattleResult OnBattleResult;
 	
 	UPROPERTY()
-	FOnCurrencyChanged OnCurrencyChanged;
+	FOnSaveTime OnSaveTime;
 	
 	UPROPERTY()
-	FOnSaveTime OnSaveTime;
+	FOnSaveRelic OnSaveRelic;
+	
+	UPROPERTY()
+	FOnSavePlayer OnSavePlayer;
+	
+	UPROPERTY()
+	FOnSaveGun OnSaveGun;
 	
 	UPROPERTY()
 	FOnGameEnd OnGameEnd;

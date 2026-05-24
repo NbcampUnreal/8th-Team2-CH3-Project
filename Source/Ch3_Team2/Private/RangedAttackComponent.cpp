@@ -57,7 +57,6 @@ void URangedAttackComponent::CheckHit()
 	
 	FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(MuzzleLocation,TargetLocation);
 	FTransform SpawnTransform(SpawnRotation, MuzzleLocation);
-	
 	//액터 가져오기
 	AActor* PooledActor = PoolComp->GetActorFromPool(ProjectileClass, SpawnTransform);
 	if (!PooledActor)

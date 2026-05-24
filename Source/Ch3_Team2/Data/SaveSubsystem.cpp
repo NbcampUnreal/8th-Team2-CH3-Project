@@ -19,6 +19,9 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     {
         MasterSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnMasterBattleResult);
         MasterSubsystem->OnSaveTime.AddDynamic(this, &USaveSubsystem::OnMasterSaveTime);
+        MasterSubsystem->OnSaveRelic.AddDynamic(this, &USaveSubsystem::OnMasterSaveRelic);
+        MasterSubsystem->OnSavePlayer.AddDynamic(this, &USaveSubsystem::OnMasterSavePlayer);
+        MasterSubsystem->OnSaveGun.AddDynamic(this, &USaveSubsystem::OnMasterSaveGun);
     }
 }
 
@@ -26,6 +29,9 @@ void USaveSubsystem::Deinitialize()
 {
     if (MasterSubsystem)
     {
+        MasterSubsystem->OnSaveGun.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveGun);
+        MasterSubsystem->OnSavePlayer.RemoveDynamic(this, &USaveSubsystem::OnMasterSavePlayer);
+        MasterSubsystem->OnSaveRelic.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveRelic);
         MasterSubsystem->OnSaveTime.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveTime);
         MasterSubsystem->OnBattleResult.RemoveDynamic(this, &USaveSubsystem::OnMasterBattleResult);
     }
@@ -54,40 +60,6 @@ void USaveSubsystem::LoadGame()
     {
         CurrentSave = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
     }
-}
-
-void USaveSubsystem::AddCurrency(int32 Amount)
-{
-    if (!CurrentSave)
-    {
-        return;
-    }
-    
-    CurrentSave->Currency += Amount;
-    if (MasterSubsystem)
-    {
-        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
-    }
-}
-
-int32 USaveSubsystem::GetCurrency() const
-{
-    return CurrentSave ? CurrentSave->Currency : 0;
-}
-
-bool USaveSubsystem::TrySpendCurrency(int32 Amount)
-{
-    if (!CurrentSave || CurrentSave->Currency < Amount)
-    {
-        return false;
-    }
-
-    CurrentSave->Currency -= Amount;
-    if (MasterSubsystem)
-    {
-        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
-    }
-    return true;
 }
 
 void USaveSubsystem::OnMasterBattleResult(int32 MeleeKills, int32 RangedKills, int32 EliteMeleeKills, int32 EliteRangedKills, int32 BossKills, int32 GlobalTotalDamage)
@@ -125,6 +97,30 @@ void USaveSubsystem::OnMasterSaveTime(int32 StageIndex, float ClearTime)
     }
 
     CurrentSave->StageClearTime[StageIndex] = ClearTime;
+    
+    SaveGame();
+}
+
+void USaveSubsystem::OnMasterSaveRelic(TArray<int32> RelicIDs)
+{
+    CurrentSave->RelicIDs = RelicIDs;
+    
+    SaveGame();
+}
+
+void USaveSubsystem::OnMasterSavePlayer(int32 PlayerLevel)
+{
+    CurrentSave->PlayerLevel = PlayerLevel;
+    
+    SaveGame();
+}
+
+void USaveSubsystem::OnMasterSaveGun(int32 GripLevel, int32 ScopeLevel, int32 MagazineLevel, int32 BulletLevel)
+{
+    CurrentSave->GripLevel     = GripLevel;
+    CurrentSave->ScopeLevel    = ScopeLevel;
+    CurrentSave->MagazineLevel = MagazineLevel;
+    CurrentSave->BulletLevel   = BulletLevel;
     
     SaveGame();
 }

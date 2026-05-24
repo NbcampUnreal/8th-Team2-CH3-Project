@@ -32,13 +32,21 @@ public:
 	FORCEINLINE float GetAttackDamage() const {return Stats.AttackDamage;}
 	UFUNCTION(BlueprintCallable)
 	bool IsDead() const;
-
+	UFUNCTION()
+	void SetDead(bool Dead){bIsDead=false;};
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	float GetCurrentHP() const { return static_cast<float>(Stats.CurrentHP); }
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	float GetMaxHP() const { return static_cast<float>(Stats.MaxHP); }
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnDeathDelegate OnDeath;
 
 	//state tree hit 확인용
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
 	bool bIsHit;
+	
+
 protected:
 	UPROPERTY(VisibleAnywhere,Category = "Stats")
 	FMonsterStats Stats;

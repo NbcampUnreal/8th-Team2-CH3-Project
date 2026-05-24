@@ -1,9 +1,7 @@
 #include "Prop/Portal.h"
 
-#include "AGameState.h"
 #include "APlayer.h"
 #include "NiagaraComponent.h"
-#include "Battle/BattleSubsystem.h"
 #include "Components/BoxComponent.h"
 #include "Data/LevelFlowSubsystem.h"
 #include "Kismet/GameplayStatics.h"

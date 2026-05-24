@@ -23,37 +23,66 @@ void AMonsterBase::BeginPlay()
 	
 }
 
+void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+}
+
 FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 {
 	return OnMonsterDeath;
 }
 
-void AMonsterBase::HandleDeath(AController* InInstigator)
+void AMonsterBase::PlayDeathAnim()
 {
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+}
+
+void AMonsterBase::DropExpItem()
+{
+	UWorld* World = GetWorld();
+	if (World && ExpItemClass)
+	{
+		FVector SpawnLocation = GetActorLocation();
+		FRotator SpawnRotation = GetActorRotation();
+        
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+
+		//경험치 아이템을 소환
+		World->SpawnActor<AActor>(ExpItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+	}
+}
+
+void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
+{
+	//State tree 비활성화
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
+		{
+			
+			STComp->StopLogic(TEXT("Aborted"));
+			STComp->Deactivate();
+		}
+	}
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->StopMovementImmediately();
 	
+	PlayDeathAnim();
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
 
-
-
 void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 {
+	StatComp->SetDead(false);
 	StatComp->InitializeStats(InStats);
-}
-
-void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
-{
-	
-	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
-	GetCharacterMovement()->StopMovementImmediately();
-	
-	SetActorHiddenInGame(false);
-	SetActorEnableCollision(true);
-	SetActorTickEnabled(true);
 	
 	//State tree 활성화
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
@@ -66,18 +95,19 @@ void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
 	}
 }
 
+void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
+{
+	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
+	GetCharacterMovement()->StopMovementImmediately();
+	
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	SetActorTickEnabled(true);
+}
+
 void AMonsterBase::OnReturnToPool()
 {
-	//State tree 비활성화
-	if (AAIController* AIController = Cast<AAIController>(GetController()))
-	{
-		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
-		{
-			
-			STComp->StopLogic(TEXT("Aborted"));
-			STComp->Deactivate();
-		}
-	}
+	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	
 	SetActorHiddenInGame(true);
 	SetActorEnableCollision(false);
@@ -88,6 +118,8 @@ void AMonsterBase::OnReturnToPool()
 
 void AMonsterBase::AfterDeath()
 {
+	// 경험치 아이템 드롭
+	DropExpItem();
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
 	{

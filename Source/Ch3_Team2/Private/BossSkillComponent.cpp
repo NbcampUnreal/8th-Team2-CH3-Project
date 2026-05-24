@@ -44,10 +44,16 @@ void UBossSkillComponent::PlayPowerSlam()
 void UBossSkillComponent::ExecutePowerSlamHit()
 {
    ACharacter* BossCharacter = Cast<ACharacter>(GetOwner());
-       if (!BossCharacter) return;
+       if (!BossCharacter)
+       {
+           return;
+       }
    
        UWorld* World = GetWorld();
-       if (!World) return;
+       if (!World)
+       {
+           return;
+       }
    
        
        FVector BossLocation = BossCharacter->GetActorLocation();
@@ -74,7 +80,10 @@ void UBossSkillComponent::ExecutePowerSlamHit()
        DrawDebugSphere(World, TraceTargetLocation, SlamRadius, 16, FColor::Green, false, 3.0f);
 
    
-       if (!bHit) return;
+       if (!bHit)
+       {
+           return;
+       }
    
        // 중복 대미지 방지용 배열
        TArray<AActor*> DamagedActors;
@@ -124,7 +133,10 @@ void UBossSkillComponent::ExecutePowerSlamHit()
 void UBossSkillComponent::PlayPlasmaOrb()
 {
     ACharacter* BossCharacter = Cast<ACharacter>(GetOwner());
-    if (!BossCharacter || !PlasmaMontage) return;
+    if (!BossCharacter || !PlasmaMontage)
+    {
+        return;
+    }
 
     if (BossCharacter->GetCharacterMovement())
     {
@@ -161,6 +173,8 @@ void UBossSkillComponent::ExecuteSpawnPlasmaOrb()
     FVector SpawnLocation =BossCharacter->GetActorLocation();
     FVector TargetLocation = PlayerPawn->GetActorLocation();
     FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(BossCharacter->GetActorLocation() ,TargetLocation);
+    SpawnLocation = SpawnLocation + (BossCharacter->GetActorForwardVector() * 150.0f) + FVector(0.0f, 0.0f, 60.0f);
+                          
     FTransform SpawnTransform(SpawnRotation,SpawnLocation);
     
     

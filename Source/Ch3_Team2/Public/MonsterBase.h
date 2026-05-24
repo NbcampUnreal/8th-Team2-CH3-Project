@@ -17,6 +17,7 @@ class CH3_TEAM2_API AMonsterBase : public ACharacter,public IPoolable
 public:	
 	AMonsterBase();
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Spawn")
 	class AMonsterSpawner* MonsterSpawner;
 	UPROPERTY(BlueprintAssignable,Category="Events")
@@ -29,6 +30,8 @@ public:
 	//스텟 컴포넌트 읽기
 	FORCEINLINE class UMonsterStatComponent* GetStatComponent() const { return StatComp; }
 	
+	UFUNCTION(BlueprintCallable)
+	void PlayDeathAnim();
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UMonsterStatComponent* StatComp;
@@ -38,10 +41,19 @@ protected:
 	
 	FTimerHandle DeathTimerHandle;
 	UFUNCTION()
-	void HandleDeath(AController* InInstigator);
+	void HandleDeath(AController* InInstigator,AActor* DeathActor);
 	void AfterDeath();
 	
+	//exp아이템
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Drop", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> ExpItemClass;
+	UFUNCTION()
+	void DropExpItem();
 	
+	
+	UPROPERTY(EditAnywhere,Category = "Animation")
+	UAnimMontage* DeathMontage;
+
 	virtual void OnSpawnFromPool(const FTransform& Transform) override;
 	virtual void OnReturnToPool() override;
 };

@@ -26,11 +26,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnReadyToReturn OnReadyToReturn;
 	// ------------------------------
-	
-	// 플레이어의 총에 맞았을 때 데미지를 처리
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	
 protected:
 	virtual void BeginPlay() override;
 
@@ -43,12 +39,13 @@ protected:
 	// 플레이어 몸이나 벽에 부딪혔을 때의 처리
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
+	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Orb Stats", meta = (AllowPrivateAccess = "true"))
-	float MaxHealth = 30.0f;
+	int32 MaxHitCount = 3;
 
-	float CurrentHealth;
+	int32 CurrentHitCount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Orb Stats", meta = (AllowPrivateAccess = "true"))
 	float OrbDamage = 30.0f;

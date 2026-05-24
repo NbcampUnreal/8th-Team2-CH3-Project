@@ -22,5 +22,6 @@ public:
 	TSubclassOf<AActor> PoolManagerClass;
 protected:
 	virtual void BeginPlay() override;
+	UPROPERTY()
 	AActor* FoundActor;
 };
