@@ -6,6 +6,8 @@
 #include "PoolComponent.h"
 #include "Kismet/GameplayStatics.h"  
 #include "Components/CapsuleComponent.h"
+#include "NavigationSystem.h"
+
 // Sets default values
 AMonsterSpawner::AMonsterSpawner()
 {
@@ -112,7 +114,6 @@ void AMonsterSpawner::SpawnBossMonster()
 		return;
 	}
 	FMonsterSpawnConfig* BossConfig = MonsterConfigs[MonsterConfigs.Num()-1];
-	
 	if (!BossConfig)
 	{
 		return;
@@ -123,14 +124,15 @@ void AMonsterSpawner::SpawnBossMonster()
 	{
 		return;
 	}
-	FVector PlayerLocation = PlayerPawn->GetActorLocation();
 	
 	FTransform SpawnTransform;
 	GetMonsterSpawnTransform(BossConfig,SpawnTransform);
 	
-	// 플레이어를 바라보도록 회전값 계산
+	FVector PlayerLocation = PlayerPawn->GetActorLocation();
 	FRotator SpawnRotation = (PlayerLocation - SpawnTransform.GetLocation()).Rotation();
 	SpawnRotation.Pitch = 0.f; 
+	
+	SpawnTransform.SetRotation(SpawnRotation.Quaternion());
 	
 	SpawnMonster(BossConfig->MonsterClass, SpawnTransform, BossConfig->MonsterStats);
 }
@@ -174,60 +176,92 @@ FMonsterSpawnConfig* AMonsterSpawner::GetRandomMonster()
 void AMonsterSpawner::GetMonsterSpawnTransform(FMonsterSpawnConfig* SelectedConfig,FTransform& Transform)
 {
 	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (!PlayerPawn)
-	{
-		return ;
-	}
-	//플레이어 주변의 랜덤 XY 평면 좌표 계산
-    float MinSpawnRadius = 500.f;  
-    float MaxSpawnRadius = 1200.f; 
-    
-    float RandomRadius = FMath::FRandRange(MinSpawnRadius, MaxSpawnRadius);
-    float RandomAngle = FMath::FRandRange(0.f, 2.f * PI);
+    if (!PlayerPawn)
+    {
+	    return;
+    }
+
+    UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+    if (!NavSys)
+    {
+    	return;
+    }
 
     FVector PlayerLocation = PlayerPawn->GetActorLocation();
-    FVector SpawnOffset(FMath::Cos(RandomAngle) * RandomRadius, FMath::Sin(RandomAngle) * RandomRadius, 0.f);
-    FVector TargetXYLocation = PlayerLocation + SpawnOffset;
-
-    // 지형 고저차 극복을 위한 수직 레이캐스트
-    FVector TraceStart = TargetXYLocation + FVector(0.f, 0.f, 1000.f); // 하늘 위로 10m 시점
-    FVector TraceEnd = TargetXYLocation - FVector(0.f, 0.f, 1000.f);   // 바닥 아래로 10m 시점
-
-    FHitResult HitResult;
-    FCollisionQueryParams QueryParams;
-    QueryParams.AddIgnoredActor(PlayerPawn); 
-
-    // WorldStatic 채널을 검사하여 땅표면 찾기
-    bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_WorldStatic, QueryParams);
-    FVector FinalSpawnLocation = TargetXYLocation;
-
-    if (bHit)
+    FNavLocation NavMeshLocation;
+    bool bFoundValidLocation = false;
+	
+	//적절한 소환 위치 찾기
+    for (int32 TryCount = 0; TryCount < 10; ++TryCount)
     {
-        //땅에 박힘 방지
-        float CapsuleHalfHeight = 88.f;
+        float MinSpawnRadius = 500.f;  
+        float MaxSpawnRadius = 1200.f; 
         
-        if (AMonsterBase* DefaultMonster = SelectedConfig->MonsterClass->GetDefaultObject<AMonsterBase>())
+        float RandomRadius = FMath::FRandRange(MinSpawnRadius, MaxSpawnRadius);
+        float RandomAngle = FMath::FRandRange(0.f, 2.f * PI);
+
+        FVector SpawnOffset(FMath::Cos(RandomAngle) * RandomRadius, FMath::Sin(RandomAngle) * RandomRadius, 0.f);
+        FVector TargetXYLocation = PlayerLocation + SpawnOffset;
+
+        // 지형 고저차 레이캐스트
+        FVector TraceStart = TargetXYLocation + FVector(0.f, 0.f, 1000.f); 
+        FVector TraceEnd = TargetXYLocation - FVector(0.f, 0.f, 1000.f);   
+
+        FHitResult HitResult;
+        FCollisionQueryParams QueryParams;
+        QueryParams.AddIgnoredActor(PlayerPawn); 
+
+        bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_WorldStatic, QueryParams);
+        FVector GroundLocation = TargetXYLocation;
+
+        if (bHit)
         {
-            if (UCapsuleComponent* MonsterCapsule = DefaultMonster->GetCapsuleComponent())
-            {
-                CapsuleHalfHeight = MonsterCapsule->GetUnscaledCapsuleHalfHeight();
-            }
+            GroundLocation = HitResult.Location;
+        }
+        else
+        {
+            GroundLocation.Z = PlayerLocation.Z;
         }
 
-        // 정확한 바닥 위치 + 몬스터 반높이 = 발을 땅에 딛는 위치
-        FinalSpawnLocation = HitResult.Location + FVector(0.f, 0.f, CapsuleHalfHeight);
-        
-        // 디버깅용
-        DrawDebugLine(GetWorld(), HitResult.Location, FinalSpawnLocation, FColor::Green, false, 3.f, 0, 2.f);
-    }
-    else
-    {
-        // 만약 절벽 바깥이나 공중에 레이 트레이싱이 실패했다면 안전하게 플레이어 높이와 맞추기
-        FinalSpawnLocation.Z = PlayerLocation.Z;
+        // NavMesh 위에 존재하는지 검사
+        FVector SearchExtent(300.f, 300.f, 300.f); 
+        if (NavSys->ProjectPointToNavigation(GroundLocation, NavMeshLocation, SearchExtent))
+        {
+            bFoundValidLocation = true;
+            break; 
+        }
     }
 	
-	FTransform SpawnTransform(FRotator::ZeroRotator, FinalSpawnLocation, FVector::OneVector);
-	Transform = SpawnTransform;
+    // 주변이 온통 절벽이거나 10번 다 실패했다면
+    if (!bFoundValidLocation)
+    {
+        // 플레이어 바로 옆에서 가장 가까운 네브메시 자리에 소환
+        FVector BackupExtent(500.f, 500.f, 500.f);
+        if (!NavSys->ProjectPointToNavigation(PlayerLocation, NavMeshLocation, BackupExtent))
+        {
+            //실패하면 에러를 내는 대신 플레이어 현재 좌표를 강제 대입
+            NavMeshLocation.Location = PlayerLocation;
+        }
+    }
+
+    // 3. 땅에 박힘 방지를 위한 캡슐 높이 연산 (최종 확정된 NavMeshLocation 기준)
+    float CapsuleHalfHeight = 88.f;
+    if (AMonsterBase* DefaultMonster = SelectedConfig->MonsterClass->GetDefaultObject<AMonsterBase>())
+    {
+        if (UCapsuleComponent* MonsterCapsule = DefaultMonster->GetCapsuleComponent())
+        {
+            CapsuleHalfHeight = MonsterCapsule->GetUnscaledCapsuleHalfHeight();
+        }
+    }
+
+    // 최종 위치 세팅
+    FVector FinalSpawnLocation = NavMeshLocation.Location + FVector(0.f, 0.f, CapsuleHalfHeight);
+    
+    // 정상 세팅은 초록색, 강제 세팅은 주황색 선으로 디버깅 표시
+    FColor DebugColor = bFoundValidLocation ? FColor::Green : FColor::Orange;
+    DrawDebugLine(GetWorld(), NavMeshLocation.Location, FinalSpawnLocation, DebugColor, false, 3.f, 0, 2.f);
+
+    Transform = FTransform(FRotator::ZeroRotator, FinalSpawnLocation, FVector::OneVector);
 }
 
 
