@@ -61,7 +61,10 @@ protected:
 	
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* DeathMontage;
-
+	
+	bool IsBoss() const;
+	int32 GetCurrentLevelIndex() const;
+	
 	virtual void OnSpawnFromPool(const FTransform& Transform) override;
 	virtual void OnReturnToPool() override;
 };

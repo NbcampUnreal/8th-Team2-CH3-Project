@@ -40,8 +40,6 @@ float ABossPlasmaOrb::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     {
         CurrentHitCount--;
         
-        UE_LOG(LogTemp,Warning,TEXT("Orb Raycast Hit! Remaining: %d"),CurrentHitCount );
-        
         if (CurrentHitCount <= 0)
         {
             OnReadyToReturn.Broadcast(this);
@@ -72,7 +70,6 @@ void ABossPlasmaOrb::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
                 1
                );
         }
-        DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 10.f, 5, FColor::Green, false, 3.f);
     }
     
     OnReadyToReturn.Broadcast(this);

@@ -74,15 +74,5 @@ void UMeleeAttackComponent::CheckHit()
 			}
 		}
 	}
-	
-	
-	//공격 디버그 시각화
-	FColor DrawColor = bHit ? FColor::Green : FColor::Red;
-	DrawDebugSweptSphere(GetWorld(),Start,End,AttackRadius,DrawColor,false,1.5);
-	if (bHit)
-	{
-		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,12,DrawColor,false,3.f);
-	}
-	
 }
 
