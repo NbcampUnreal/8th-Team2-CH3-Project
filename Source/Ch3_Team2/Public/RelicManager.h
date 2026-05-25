@@ -54,9 +54,12 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Relic")
 	FOnRelicRewardGeneratedSignature OnRelicRewardGenerated;
 	
+	UFUNCTION(BlueprintCallable)
+	void EliteMonsterDeath();
+	
 	ERelicGrade NormalRollGrade();
 	
-	void LodeData(TArray<int32> RelicIDs);
+	void LoadData(TArray<int32> RelicIDs);
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	

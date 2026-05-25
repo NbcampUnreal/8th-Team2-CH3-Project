@@ -17,13 +17,13 @@ ARelicManager::ARelicManager()
 void ARelicManager::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-void ARelicManager::LodeData(TArray<int32> RelicIDs)
-{
 	
 	ApplyManager = GetWorld()->SpawnActor<ARelicApplyManager>(ApplyManagerClass);
-	
+
+}
+
+void ARelicManager::LoadData(TArray<int32> RelicIDs)
+{
 	if (!ApplyManager) return;
 	
 	RandomRelicOption.Empty();
@@ -57,6 +57,15 @@ void ARelicManager::LodeData(TArray<int32> RelicIDs)
 	for (int32 RelicID : RelicIDs)
 	{
 		OwnedRelicIDs.Add({RelicID, false});
+		
+		if (RelicID >= 1017)
+		{
+			BlockedRelicIDs.Add(RelicID);
+		}
+	}
+	if (OwnedRelicIDs.Num() != 0)
+	{
+		ApplyManager->ApplyRelicById(OwnedRelicIDs);
 	}
 }
 
@@ -166,6 +175,13 @@ bool ARelicManager::GetRandomRelicByGrade(
 	OutRelic = Candidates[RandIndex];
 
 	return true;
+}
+
+void ARelicManager::EliteMonsterDeath()
+{
+	RandomRelic();
+	
+	OnRelicRewardGenerated.Broadcast(RandomRelicOption);
 }
 
 
