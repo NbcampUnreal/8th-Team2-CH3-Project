@@ -202,4 +202,6 @@ public:
 		,class AController* EventInstigator
 		,AActor* DamageCauser
 	) override;
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 };
