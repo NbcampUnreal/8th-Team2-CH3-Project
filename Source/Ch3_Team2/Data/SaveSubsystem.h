@@ -42,6 +42,8 @@ public:
 
 	void SaveGame();
 	void LoadGame();
+	
+	TArray<int32> GetRelicIDs() const { return CurrentSave->RelicIDs; };
 
 	int32 GetPlayerLevel()  const { return CurrentSave->PlayerLevel; }
 	int32 GetPlayerSkill()  const { return CurrentSave->PlayerSkill; }

@@ -57,7 +57,9 @@ void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
 void ULevelFlowSubsystem::PreloadNextLevel()
 {
     if (!LoadedFlowData)
+    {
         return;
+    }
 
     int32 NextIndex = LoadedFlowData->Levels.IsValidIndex(CurrentLevelIndex + 1) ? CurrentLevelIndex + 1 : 0;
 
