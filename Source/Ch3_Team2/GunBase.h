@@ -16,9 +16,8 @@ public:
 	
 	AGunBase();
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 	void InitializeParts();
-	bool HasAmmo();
+	bool CanShoot();
 	bool CanReload();
 	
 	UFUNCTION(BlueprintCallable)
@@ -26,13 +25,10 @@ public:
 	virtual void FireGun(FVector Location, FVector Direction);
 	
 	
-	// RPM ( 연사 속도 )시간 끝내는함수 
-	void GripFireDelay();
+	void ResetFireCooldown();
 	void AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical);
 	
-	
-	
-	
+		
 	void BattleIn(const FHitResult& HitResult);
 	
 	
@@ -81,13 +77,12 @@ public:
 	float ActiveReload = 0;
 	
 	UPROPERTY(EditAnywhere, Category = "Weapon")
-	int32 WeaponIndex;                           
-	
-	// 추가되는 스텟
+	int32 WeaponIndex = 0;                           
 	float AddReloadTime = 0;
 	float AddedRecoil = 0;
 	
-	// Weapon Parts
+	bool bTriggerReleased = true; 
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Bullet;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
@@ -100,14 +95,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Parts")
 	void SelectParts(EPartsName parts);
 
-	// [추가] UI에서 특정 파츠의 현재 정보(이름, 레벨, 수치)를 읽어갈 수 있는 Getter 함수
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Weapon|Parts")
 	FGunParts GetPartsData(EPartsName PartsType) const;
 	
-	// 💡 타이머 대신 사용할 쿨타임 계산 변수들
 	float FireCooldownTimer = 0.0f;
 	
-	// [추가] 핸들 파츠(반동 감소) 스탯이 반영된 최종 반동 값을 반환하는 함수
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Recoil")
 	float GetCurrentRecoilPitch() const;
+	
+	bool AutoMatickCheck()const {return bIsAutomatic;}
 };

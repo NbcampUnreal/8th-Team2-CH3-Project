@@ -4,27 +4,41 @@
 #include "public/MonsterBase.h"
 #include "DrawDebugHelpers.h"
 
-bool AGunBase::HasAmmo()
+bool AGunBase::CanShoot()
 {
-	if (CanFire && !bReloadingCheck && CurrentAmmo > 0)
+	if (bReloadingCheck)
 	{
-		CanFire = false; // 사격 잠금
-
-		// 부모의 타이머 핸들(TimerFireDelay)과 부모의 RoundsPerSecond를 사용해 타이머 등록
-		// 명시적으로 1.0f 소수점 연산을 보장합니다.
-		float FireInterval = 1.0f / FMath::Max(RoundsPerSecond, 0.1f);
-
-		GetWorld()->GetTimerManager().SetTimer(
-			TimerFireDelay,
-			this,
-			&AGunBase::GripFireDelay,
-			FireInterval,
-			false
-		);
-			
-		return true;
+		return false;
 	}
-	return false;
+	
+	if (CurrentAmmo <= 0)
+	{
+		return false;
+	}
+
+	if (!CanFire)
+	{
+		return false;
+	}
+	if (!bIsAutomatic && !bTriggerReleased)
+	{
+		return false;
+	}
+	CanFire = false;
+
+	bTriggerReleased = false;
+	
+	float FireInterval =
+		1.0f / FMath::Max(RoundsPerSecond, 0.1f);
+
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerFireDelay,
+		this,
+		&AGunBase::ResetFireCooldown,
+		FireInterval,
+		false
+	);
+	return true;
 }
 bool AGunBase::CanReload()
 {
@@ -47,7 +61,7 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 	float SafeSpread = FMath::Max(SpreadAngle, 0.0f);
 	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SafeSpread));
 	FVector End = Location + (SpreadDirection * EffectiveRange);
-
+	
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);          
@@ -64,14 +78,15 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 	
 	DrawDebugLine(
 		GetWorld(),
-		Location,           // 시작 지점
-		End,                // 끝 지점
-		LColor.ToFColor(true),          // 색상
-		false,              // 매 프레임마다 그릴지 여부 (고정된 라인은 false)
-		2.0f,               // 유지 시간 (초 단위, 블루프린트의 For Duration과 대응)
-		0,                  // 우선순위
-		0.1f  //두께
+		Location,           
+		End,                
+		LColor.ToFColor(true),
+		false,              
+		2.0f,               
+		0,                  
+		0.1f  
 	);
+	
 	if (bHit)
 	{
 		BattleIn(HitResult);
@@ -87,8 +102,6 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 	{
 		return;
 	}
-
-	// TODO: blsCritical 기능 추가
 	BattleSubsystem->ExecuteDamageCalculation(
 		GetOwner(), 
 		Monster, 
@@ -137,7 +150,7 @@ void AGunBase::SaveData()
 	}
 }
 
-void AGunBase::GripFireDelay()
+void AGunBase::ResetFireCooldown()
 {
 	CanFire = true; 
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
@@ -147,7 +160,8 @@ void AGunBase::AddDamage(float Add_RelicDamage, float Add_TotalDamage, float Cri
 	RelicBonus += Add_RelicDamage;
 	TotalBonus += Add_TotalDamage / 100.0f;
 	CritMultiplier += Critical;
-	FinalDamage = (BaseDamage * (1 + Bullet.Value) + RelicBonus) * (1 + TotalBonus);
+	float BulletBonusDamage =BaseDamage * Bullet.Level * Bullet.Value;
+	FinalDamage =(BaseDamage +BulletBonusDamage +RelicBonus)* (1.0f + TotalBonus);
 }
 void AGunBase::SelectParts(EPartsName parts)
 {
@@ -245,17 +259,4 @@ void AGunBase::InitializeParts()
 float AGunBase::GetCurrentRecoilPitch() const
 {
 	return FMath::Max(ActiveRecoil, 0.1f);
-}
-void AGunBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	if (!CanFire)
-	{
-		FireCooldownTimer -= DeltaTime;
-		if (FireCooldownTimer <= 0.0f)
-		{
-			CanFire = true;
-		}
-	}
 }

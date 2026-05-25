@@ -17,14 +17,13 @@
 #include "Prop/HealTotem.h"
 
 
-// Sets default values
 AAPlayer::AAPlayer()
 {
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 		
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
+	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); 
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	GetMesh()->AddRelativeLocation(FVector(10.0f,0,0));
@@ -72,16 +71,16 @@ void AAPlayer::SwitchSkill(int32 Index)
 
 void AAPlayer::SwitchWeapon(int32 Index)
 {
-	// 1. 현재 들고 있는 무기 숨기기 및 비활성화
-	if (EquipedGun)
+	
+	if (EquippedGun)
 	{
-		EquipedGun->SetActorHiddenInGame(true);
-		EquipedGun->SetActorEnableCollision(false);
-		EquipedGun->SetOwner(nullptr);
-		EquipedGun->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		EquippedGun->SetActorHiddenInGame(true);
+		EquippedGun->SetActorEnableCollision(false);
+		EquippedGun->SetOwner(nullptr);
+		EquippedGun->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	}
 
-	// 2. 월드에 배치된 모든 AGunBase 액터 찾기
+	
 	TArray<AActor*> FoundGuns;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGunBase::StaticClass(), FoundGuns);
 
@@ -101,27 +100,29 @@ void AAPlayer::SwitchWeapon(int32 Index)
 			}
 		}
 	}
-
-	// 3. 찾은 무기 장착
 	if (TargetGun)
 	{
-		EquipedGun = TargetGun;
+		EquippedGun = TargetGun;
         
-		// 무기 활성화
-		EquipedGun->SetActorHiddenInGame(false);
-		EquipedGun->SetActorEnableCollision(true);
-        EquipedGun->SetOwner(this);
-		// 손 소켓에 부착
-		EquipedGun->AttachToComponent(
+		EquippedGun->SetActorHiddenInGame(false);
+		EquippedGun->SetActorEnableCollision(true);
+        EquippedGun->SetOwner(this);
+		EquippedGun->AttachToComponent(
 			GetMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("GripPoint")
 		);
-        
-		EquipedGun->SetActorRelativeLocation(FVector::ZeroVector);
-		EquipedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
-		EquipedGun->PartsUpdate();
+		EquippedGun->SetActorRelativeLocation(FVector::ZeroVector);
+		EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+		
+		EquippedGun->PartsUpdate();
 		CurrentWeapon = Index;
+	}
+	else
+	{
+		EquippedGun = nullptr; 
+		CurrentWeapon = -1; 
+		UE_LOG(LogTemp, Warning, TEXT("인덱스 %d 가 잘못되었습니다.."), Index);
 	}
 }
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -136,7 +137,6 @@ void AAPlayer::Move(const FInputActionValue& Value)
 }
 void AAPlayer::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -153,23 +153,20 @@ void AAPlayer::Look(const FInputActionValue& Value)
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	if (EquipedGun &&EquipedGun->CanReload())
+	if (EquippedGun &&EquippedGun->CanReload())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 		if (AnimInstance && ReloadMontage)
 		{
-			AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
+			AnimInstance->Montage_Play(ReloadMontage, EquippedGun->GetReloadSpeed());
 		}
 	}
 }
+
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
-	if (!EquipedGun)
-	{
-		return;
-	}
 	
-	if (EquipedGun && EquipedGun->HasAmmo())
+	if (EquippedGun && EquippedGun->CanShoot())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 
@@ -178,11 +175,11 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 			FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); 
 			FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     
 			AnimInstance->Montage_Play(ShootMontage, 1.0f);
-			EquipedGun->FireGun(CameraLocation,CameraForward);
+			EquippedGun->FireGun(CameraLocation,CameraForward);
 			
 				
-			float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
-			RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			float FinalRecoilPitch = EquippedGun->GetCurrentRecoilPitch();
+			RecoilRecoveryRotation += EquippedGun->GetCurrentRecoilPitch();
 			
 			if (PController)
 			{
@@ -209,6 +206,8 @@ void AAPlayer::Interact(const FInputActionValue& Value)
         CurrentTargetStructure = nullptr;
 	}
 }
+
+
 
 void AAPlayer::Tick(float DeltaTime)
 {
@@ -281,8 +280,18 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AAPlayer::Shooting);
 		
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AAPlayer::OnStopShooting);
+
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAPlayer::Interact);
 		
+	}
+}
+
+void AAPlayer::OnStopShooting()
+{
+	if (EquippedGun)
+	{
+		EquippedGun->bTriggerReleased = true; 
 	}
 }
 
@@ -381,9 +390,9 @@ void AAPlayer::AddExp(int32 Add_Exp)
 }
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
 {
-	if (EquipedGun)
+	if (EquippedGun)
 	{
-		EquipedGun->AddDamage(AddRelicBonus, TotalBonus, Critical);
+		EquippedGun->AddDamage(AddRelicBonus, TotalBonus, Critical);
 	}
 }
 void AAPlayer::LevelUpStat()
@@ -405,16 +414,16 @@ void AAPlayer::DecreaseSkillCoolTime(float SkillCoolTime)
 
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
-	if (EquipedGun)
+	if (EquippedGun)
 	{
-		EquipedGun->SelectParts(PartsType);
+		EquippedGun->SelectParts(PartsType);
 	}
 }		
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
-	if (EquipedGun)
+	if (EquippedGun)
 	{
-		return EquipedGun->GetPartsData(PartsType);
+		return EquippedGun->GetPartsData(PartsType);
 	}
 	return FGunParts();
 }	

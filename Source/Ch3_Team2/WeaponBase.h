@@ -36,7 +36,7 @@ protected:
 	
 	// 전체 공격력 증가 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
-	float TotalBonus = 1.0f;
+	float TotalBonus = 0.0f;
 
 	// 최종 공격력 ( 계산 다된거 )  
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
@@ -78,11 +78,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
 	float SpreadAngleDegrees = 12.0f;
 		
-	// 현제 장전 여부
 	bool bReloadingCheck = false;
-	// 장전 TimeHandle
+	
 	FTimerHandle TimeReloadDelay;
 	
-	//연사속도 제어를 위한 핸들
 	FTimerHandle TimerFireDelay;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
+	bool bIsAutomatic = false;
 };

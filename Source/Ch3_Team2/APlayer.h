@@ -61,6 +61,8 @@ public:
 	void Reload(const FInputActionValue& Value);
 	void Shooting(const FInputActionValue& Value);
 	void Interact(const FInputActionValue& Value);
+	
+	
 
 	void SkillInputKey(const FInputActionValue& Value);
 	
@@ -119,7 +121,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ExpDrop")
 	USphereComponent* MagnetComp; 
 	
-	
+	void OnStopShooting();
 	
 	void LoadData(int32 GetLevel,int32 GetSkill, int32 GetWeapon);
 	void SaveData();
@@ -160,7 +162,7 @@ public:
 	APlayerController* PController;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RecoilControll")
-	AGunBase* EquipedGun;
+	AGunBase* EquippedGun;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TArray<TSubclassOf<AGunBase>> WeaponBlueprintClasses;
