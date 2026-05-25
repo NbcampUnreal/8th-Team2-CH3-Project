@@ -2,12 +2,16 @@
 
 
 #include "MonsterBase.h"
+
+#include "AGameState.h"
 #include "AIController.h"
 #include "Components/StateTreeAIComponent.h"
 #include "MonsterAttackComponent.h"
 #include "MonsterStatComponent.h"
+#include "Data/MasterSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Kismet/GameplayStatics.h"
+#include "Data/LevelFlowSubsystem.h"
 AMonsterBase::AMonsterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -142,9 +146,23 @@ void AMonsterBase::AfterDeath()
 	DropExpItem();
 	if (StatComp && StatComp->GetMonsterTag()== EMonsterGrade::Boss)
 	{
-		GEngine->AddOnScreenDebugMessage(-1,3,FColor::Green,TEXT("adlafkdjfald;fa"));
-		SpawnBossPortal();
+		if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+		{
+			if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
+			{
+				if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+				{
+					MasterSubsystem->OnGameEnd.Broadcast();
+				}
+			}
+			else
+			{
+				SpawnBossPortal();
+			}
+		}
 	}
+	
+	
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
 	{
@@ -177,4 +195,16 @@ void AMonsterBase::SpawnBossPortal()
 	}
 }
 
-
+void AMonsterBase::BossAfterDeadth()
+{
+	if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+	{
+		if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
+		{
+			if (AAGameState* GS = GetWorld()->GetGameState<AAGameState>())
+			{
+				GS->OnStageEnd.Broadcast();
+			}
+		}
+	}
+}

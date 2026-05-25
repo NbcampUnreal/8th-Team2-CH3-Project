@@ -30,6 +30,9 @@ public:
 	void GripFireDelay();
 	void AddDamage(float Add_RelicDamage,float Add_TotalDamage,float Critical);
 	
+	
+	
+	
 	void BattleIn(const FHitResult& HitResult);
 	
 	
@@ -37,8 +40,9 @@ public:
 	void AddCritical(float Critical){CritMultiplier += Critical;}
 	
 	void DecreaseReloadTimeStat(float AddReload);
-	
-	void LoadData();
+
+	void PartsUpdate();
+	void LoadData(int32 GripLevel, int32 ScopeLevel, int32 MagazineLevel, int32 BulletLevel);
 	void SaveData();
 	//set
 	void SetBulletLevel(int32 Level){Bullet.Level = Level;}
@@ -75,6 +79,9 @@ public:
 	float SpreadAngle = 0;
 	float ActiveRecoil = 0;
 	float ActiveReload = 0;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	int32 WeaponIndex;                           
 	
 	// 추가되는 스텟
 	float AddReloadTime = 0;
