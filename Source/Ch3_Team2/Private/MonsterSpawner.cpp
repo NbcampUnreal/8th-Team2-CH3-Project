@@ -256,11 +256,7 @@ void AMonsterSpawner::GetMonsterSpawnTransform(FMonsterSpawnConfig* SelectedConf
 
     // 최종 위치 세팅
     FVector FinalSpawnLocation = NavMeshLocation.Location + FVector(0.f, 0.f, CapsuleHalfHeight);
-    
-    // 정상 세팅은 초록색, 강제 세팅은 주황색 선으로 디버깅 표시
-    FColor DebugColor = bFoundValidLocation ? FColor::Green : FColor::Orange;
-    DrawDebugLine(GetWorld(), NavMeshLocation.Location, FinalSpawnLocation, DebugColor, false, 3.f, 0, 2.f);
-
+	
     Transform = FTransform(FRotator::ZeroRotator, FinalSpawnLocation, FVector::OneVector);
 }
 

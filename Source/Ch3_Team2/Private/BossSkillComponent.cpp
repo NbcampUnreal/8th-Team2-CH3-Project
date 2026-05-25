@@ -75,11 +75,7 @@ void UBossSkillComponent::ExecutePowerSlamHit()
            SphereShape,          
            QueryParams
        );
-   
-       // 디버그 구체 그리기
-       DrawDebugSphere(World, TraceTargetLocation, SlamRadius, 16, FColor::Green, false, 3.0f);
-
-   
+    
        if (!bHit)
        {
            return;
@@ -108,8 +104,6 @@ void UBossSkillComponent::ExecutePowerSlamHit()
                    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Player Evaded Power Slam by Jumping!"));
                    continue; 
                }
-               
-               DrawDebugSphere(World, Hit.ImpactPoint, 3, 16, FColor::Green, false, 3.0f);
                
                UBattleSubsystem* BattleSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UBattleSubsystem>() : nullptr;
                // 데미지 적용
