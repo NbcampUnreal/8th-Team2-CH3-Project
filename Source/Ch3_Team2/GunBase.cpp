@@ -3,6 +3,8 @@
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
 #include "DrawDebugHelpers.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
 
 bool AGunBase::CanShoot()
 {
@@ -74,23 +76,33 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 		ECC_Visibility, 
 		Params
 	);
-	FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
+	//FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
 	
-	DrawDebugLine(
-		GetWorld(),
-		Location,           
-		End,                
-		LColor.ToFColor(true),
-		false,              
-		2.0f,               
-		0,                  
-		0.1f  
-	);
+	//DrawDebugLine(
+	//	GetWorld(),
+	//	Location,
+	//	End,
+	//	LColor.ToFColor(true),
+	//	false,
+	//	2.0f,
+	//	0,
+	//	0.1f
+	//);
 	
 	if (bHit)
 	{
 		BattleIn(HitResult);
-		DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
+		//DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
+		
+		if (HitEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				HitEffect,
+				HitResult.ImpactPoint,
+				HitResult.ImpactNormal.Rotation()
+			);
+		}
 	}
 }
 void AGunBase::BattleIn(const FHitResult& HitResult)
@@ -110,6 +122,7 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 		CritMultiplier
 	);
 }
+
 void AGunBase::PartsUpdate()
 {
 	

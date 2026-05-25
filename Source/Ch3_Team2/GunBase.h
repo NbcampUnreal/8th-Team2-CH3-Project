@@ -7,6 +7,8 @@
 #include "GunParts.h"
 #include "GunBase.generated.h"
 
+class UNiagaraSystem;
+
 UCLASS()
 class CH3_TEAM2_API AGunBase : public AWeaponBase
 {
@@ -83,6 +85,11 @@ public:
 	
 	bool bTriggerReleased = true; 
 	
+	// Niagara
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX")
+	UNiagaraSystem* HitEffect;
+	
+	// Weapon Parts
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")
 	FGunParts Bullet;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Parts")

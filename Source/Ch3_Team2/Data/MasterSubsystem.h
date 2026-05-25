@@ -4,12 +4,6 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MasterSubsystem.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnBattleResult, 
-	int32, MeleeKills,		int32, RangedKills,
-	int32, EliteMeleeKills,	int32, EliteRangedKills,
-	int32, BossKills,		int32, GlobalTotalDamage);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveTime, int32, StageIndex, float, ClearTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveRelic, TArray<int32>, RelicIDs);
 
@@ -18,6 +12,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnSavePlayer, int32, PlayerLevel
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnSaveGun, int32, GripLevel, int32, ScopeLevel, int32, MagazineLevel, int32, BulletLevel);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameEnd);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnBattleResult, 
+	int32, MeleeKills,		int32, RangedKills,
+	int32, EliteMeleeKills,	int32, EliteRangedKills,
+	int32, BossKills,		int32, GlobalTotalDamage);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveTime, int32, StageIndex, float, ClearTime);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnShowStatisticsUI);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEliteMonsterKills);
 
@@ -30,12 +33,6 @@ class CH3_TEAM2_API UMasterSubsystem : public UGameInstanceSubsystem
 	
 public:
 	UPROPERTY()
-	FOnBattleResult OnBattleResult;
-	
-	UPROPERTY()
-	FOnSaveTime OnSaveTime;
-	
-	UPROPERTY()
 	FOnSaveRelic OnSaveRelic;
 	
 	UPROPERTY()
@@ -46,6 +43,15 @@ public:
 	
 	UPROPERTY()
 	FOnGameEnd OnGameEnd;
+	
+	UPROPERTY()
+	FOnBattleResult OnBattleResult;
+	
+	UPROPERTY()
+	FOnSaveTime OnSaveTime;
+	
+	UPROPERTY()
+	FOnShowStatisticsUI OnShowStatisticsUI;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnEliteMonsterKills OnEliteMonsterKills;

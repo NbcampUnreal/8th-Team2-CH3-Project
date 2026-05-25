@@ -139,6 +139,16 @@ void UBattleSubsystem::ProcessDeathAndKillCount(AActor* Victim)
 
 void UBattleSubsystem::BroadcastBattleResult()
 {
+	if (!GetWorld()) return;
+
+	GetWorld()->GetTimerManager().SetTimerForNextTick(
+		this,
+		&UBattleSubsystem::ExecuteBattleResultBroadcast
+	);
+}
+
+void UBattleSubsystem::ExecuteBattleResultBroadcast()
+{
 	if (!GetGameInstance())
 	{
 		return;

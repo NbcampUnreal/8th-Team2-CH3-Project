@@ -201,9 +201,9 @@ void AMonsterBase::BossAfterDeath()
 	const int32 StageIndex = GetCurrentLevelIndex();
 	if (StageIndex != -1 && StageIndex == 3)
 	{
-		if (AAGameState* GS = GetWorld()->GetGameState<AAGameState>())
+		if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 		{
-			GS->OnStageEnd.Broadcast();
+			MasterSubsystem->OnShowStatisticsUI.Broadcast();
 		}
 	}
 }
