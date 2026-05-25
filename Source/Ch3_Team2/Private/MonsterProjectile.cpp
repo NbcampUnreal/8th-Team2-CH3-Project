@@ -51,7 +51,6 @@ void AMonsterProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 		false, 
 		1
 		);
-			DrawDebugSphere(GetWorld(),Hit.ImpactPoint,10.f,5,FColor::Green,false,3.f);
 		}
 	}
 	OnReadyToReturn.Broadcast(this);

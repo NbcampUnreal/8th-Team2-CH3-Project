@@ -76,33 +76,29 @@ void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->StopMovementImmediately();
-    
+	
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
 		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
 		{
-          
+			
 			STComp->StopLogic(TEXT("Aborted"));
 			STComp->Deactivate();
 		}
 	}
-    
+	
 	PlayDeathAnim();
-    
-	if (StatComp && StatComp->GetMonsterTag()== EMonsterGrade::Boss)
+	if (IsBoss())
 	{
-		if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+		const int32 StageIndex = GetCurrentLevelIndex();
+		if (StageIndex != -1 && StageIndex == 3)
 		{
-			if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
+			if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 			{
-				if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
-				{
-					MasterSubsystem->OnGameEnd.Broadcast();
-				}
+				MasterSubsystem->OnGameEnd.Broadcast();
 			}
 		}
 	}
-    
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
@@ -159,17 +155,14 @@ void AMonsterBase::AfterDeath()
 {
 	// 경험치 아이템 드롭
 	DropExpItem();
-	if (StatComp && StatComp->GetMonsterTag()== EMonsterGrade::Boss)
+	if (IsBoss())
 	{
-		if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+		const int32 StageIndex = GetCurrentLevelIndex();
+		if (StageIndex != -1 && StageIndex != 3)
 		{
-			if (LevelFlowSubsystem->GetCurrentLevelIndex() != 3)
-			{
-				SpawnBossPortal();
-			}
+			SpawnBossPortal();
 		}
 	}
-	
 	
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
@@ -205,14 +198,12 @@ void AMonsterBase::SpawnBossPortal()
 
 void AMonsterBase::BossAfterDeath()
 {
-	if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+	const int32 StageIndex = GetCurrentLevelIndex();
+	if (StageIndex != -1 && StageIndex == 3)
 	{
-		if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
+		if (AAGameState* GS = GetWorld()->GetGameState<AAGameState>())
 		{
-			if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
-			{
-				MasterSubsystem->OnShowStatisticsUI.Broadcast();
-			}
+			GS->OnStageEnd.Broadcast();
 		}
 	}
 }
@@ -236,4 +227,19 @@ void AMonsterBase::RotateToPlayerTarget()
 		FRotator TargetRotation = TargetDirection.Rotation();
 		SetActorRotation(TargetRotation);
 	}
+}
+
+bool AMonsterBase::IsBoss() const
+{
+	// StatComp가 존재하고 에넘 태그가 Boss인지 검사
+	return StatComp && StatComp->GetMonsterTag() == EMonsterGrade::Boss;
+}
+
+int32 AMonsterBase::GetCurrentLevelIndex() const
+{
+	if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+	{
+		return LevelFlowSubsystem->GetCurrentLevelIndex();
+	}
+	return -1; // 서브시스템을 찾지 못했을 때의 예외 처리용 Fallback 값
 }
