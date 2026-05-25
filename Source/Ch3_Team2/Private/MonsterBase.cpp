@@ -76,18 +76,33 @@ void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->StopMovementImmediately();
-	
+    
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
 		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
 		{
-			
+          
 			STComp->StopLogic(TEXT("Aborted"));
 			STComp->Deactivate();
 		}
 	}
-	
+    
 	PlayDeathAnim();
+    
+	if (StatComp && StatComp->GetMonsterTag()== EMonsterGrade::Boss)
+	{
+		if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
+		{
+			if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
+			{
+				if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
+				{
+					MasterSubsystem->OnGameEnd.Broadcast();
+				}
+			}
+		}
+	}
+    
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
@@ -148,14 +163,7 @@ void AMonsterBase::AfterDeath()
 	{
 		if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
 		{
-			if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
-			{
-				if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
-				{
-					MasterSubsystem->OnGameEnd.Broadcast();
-				}
-			}
-			else
+			if (LevelFlowSubsystem->GetCurrentLevelIndex() != 3)
 			{
 				SpawnBossPortal();
 			}
@@ -201,9 +209,9 @@ void AMonsterBase::BossAfterDeath()
 	{
 		if (LevelFlowSubsystem->GetCurrentLevelIndex() == 3)
 		{
-			if (AAGameState* GS = GetWorld()->GetGameState<AAGameState>())
+			if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 			{
-				GS->OnStageEnd.Broadcast();
+				MasterSubsystem->OnShowStatisticsUI.Broadcast();
 			}
 		}
 	}
