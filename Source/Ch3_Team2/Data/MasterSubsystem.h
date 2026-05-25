@@ -47,9 +47,9 @@ public:
 	UPROPERTY()
 	FOnGameEnd OnGameEnd;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnEliteMonsterKills OnEliteMonsterKills;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnBossMonsterKills OnBossMonsterKills;
 };
