@@ -75,6 +75,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* ShootMontage;
 	
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	TSubclassOf<UAnimInstance> RifleABPClass;
+
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	TSubclassOf<UAnimInstance> PistolABPClass;
+	
 	// Weapon
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Child")
 	UChildActorComponent* ChildActors;
@@ -206,4 +212,10 @@ public:
 	) override;
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	const FVector MeshPistolLocation = FVector(-10.0f,0.0,-165.0f);
+	const FVector MeshRifleLocaiton = FVector(-15.0f,15.0,-150.0f);
+	const FRotator MeshPistolRotaiton = FRotator(0.0f,-90.0f,0.0f);
+	const FRotator WeaponPistolRotation = FRotator(-20.0f,-28.0f,-5.0f);
+	const FRotator MeshRifleRotaiton = FRotator(0.0f,-12.5f,0.0f);
 };
