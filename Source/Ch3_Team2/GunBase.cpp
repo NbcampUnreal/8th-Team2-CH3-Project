@@ -21,12 +21,7 @@ bool AGunBase::HasAmmo()
 			FireInterval,
 			false
 		);
-		
-		// 디버깅용 로그
-		UE_LOG(LogTemp, Error, TEXT("⚠️ [HasAmmo 거절] CanFire: %s | bReloadingCheck: %s | CurrentAmmo: %d"),
-			CanFire ? TEXT("True") : TEXT("False"),
-			bReloadingCheck ? TEXT("True") : TEXT("False"),
-			CurrentAmmo);
+			
 		return true;
 	}
 	return false;
@@ -52,8 +47,6 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 	float SafeSpread = FMath::Max(SpreadAngle, 0.0f);
 	FVector SpreadDirection = FMath::VRandCone(Direction, FMath::DegreesToRadians(SafeSpread));
 	FVector End = Location + (SpreadDirection * EffectiveRange);
-	
-	
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
@@ -104,8 +97,9 @@ void AGunBase::BattleIn(const FHitResult& HitResult)
 		CritMultiplier
 	);
 }
-void AGunBase::LoadData()
+void AGunBase::PartsUpdate()
 {
+	
 	SpreadAngle = FMath::Max(
 		SpreadAngleDegrees -
 		SpreadAngleDegrees * Scope.Level * Scope.Value,
@@ -126,6 +120,14 @@ void AGunBase::LoadData()
 	AddDamage(0,0,0);
 }
 
+void AGunBase::LoadData(int32 GripLevel, int32 ScopeLevel, int32 MagazineLevel, int32 BulletLevel)
+{
+	Bullet.Level = BulletLevel;
+	Magazine.Level =MagazineLevel;
+	Scope.Level = ScopeLevel;
+	Grip.Level = GripLevel;
+}
+
 void AGunBase::SaveData()
 {
 	UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
@@ -137,7 +139,7 @@ void AGunBase::SaveData()
 
 void AGunBase::GripFireDelay()
 {
-	CanFire = true; // 부모의 CanFire를 다시 true로 엽니다!
+	CanFire = true; 
 	GetWorld()->GetTimerManager().ClearTimer(TimerFireDelay);
 }
 void AGunBase::AddDamage(float Add_RelicDamage, float Add_TotalDamage, float Critical)
@@ -165,7 +167,7 @@ void AGunBase::SelectParts(EPartsName parts)
 	{
 		++Magazine.Level; 
 	}
-	LoadData();
+	PartsUpdate();
 }
 FGunParts AGunBase::GetPartsData(EPartsName PartsType) const
 {
@@ -219,29 +221,24 @@ void AGunBase::BeginPlay()
 	SpreadAngle = SpreadAngleDegrees;
 	
 	InitializeParts();
-	AddDamage(0,0,0);	
-	
+	PartsUpdate();
 }
 
 void AGunBase::InitializeParts()
 {
 	Bullet.Name = "Bullet";
-	Bullet.Level = 0;
 	Bullet.Value = LevelUpDamageValue;
 	Bullet.Parts = EPartsName::Bullet;
 	
 	Magazine.Name = "Magazine";
-	Magazine.Level = 0;
 	Magazine.Value = LevelUpReloadValue;
 	Magazine.Parts = EPartsName::Magazine;
 	
 	Scope.Name = "Scope";
-	Scope.Level = 0;  
 	Scope.Value = LevelUpScopeValue;  
 	Scope.Parts = EPartsName::Scope;
 	
 	Grip.Name = "Handle";
-	Grip.Level = 0;
 	Grip.Value = LevelUpGripValue;
 	Grip.Parts = EPartsName::Handle;
 }

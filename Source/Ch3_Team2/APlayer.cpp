@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GunBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "InputActionValue.h"
 #include "Data/MasterSubsystem.h"
 #include "Engine/LocalPlayer.h"
@@ -44,24 +45,19 @@ void AAPlayer::BeginPlay()
 	Super::BeginPlay();
 	PController = Cast<APlayerController>(GetController());
 	LoadData(CurrentLevel,CurrentSkill,CurrentWeapon);
-	
 }
-
 
 void AAPlayer::SwitchSkill(int32 Index)
 {
 	if (!MySkillInventory.IsValidIndex(Index) || !MySkillInventory[Index])
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[SwitchSkill] 유효하지 않은 스킬 인덱스이거나 스킬이 비어있습니다."));
 		return;
 	}
-
 	if (ActiveSkillComp)
 	{
 		ActiveSkillComp->SetComponentTickEnabled(false);
 		ActiveSkillComp->UnregisterComponent();
 	}
-
 	ActiveSkillComp = MySkillInventory[Index];
 	if (ActiveSkillComp)
 	{
@@ -71,85 +67,69 @@ void AAPlayer::SwitchSkill(int32 Index)
 			ActiveSkillComp->SetComponentTickEnabled(true);
 		}
 		CurrentSkill = Index;
-
-		UE_LOG(LogTemp, Log, TEXT("스킬 교체 완료: %s"), *ActiveSkillComp->GetName());
 	}
 }
 
 void AAPlayer::SwitchWeapon(int32 Index)
 {
-	if (!WeaponBlueprintClasses.IsValidIndex(Index) || !WeaponBlueprintClasses[Index])
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[SwitchWeapon] 유효하지 않은 인덱스이거나 무기가 비어있습니다."));
-		return;
-	}
-
-	UClass* SpawnClass = WeaponBlueprintClasses[Index];
-	if (!SpawnClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] %d 번 인덱스의 블루프린트 에셋이 기어코 None입니다!"), Index);
-		return;
-	}
-	// 1. 기존 무기 및 컴포넌트 내부 액터가 있다면 확실하게 제거
+	// 1. 현재 들고 있는 무기 숨기기 및 비활성화
 	if (EquipedGun)
 	{
-		EquipedGun->Destroy();
-		EquipedGun = nullptr;
-	}
-	if (ChildActors)
-	{
-		ChildActors->SetChildActorClass(nullptr); 
-	}
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = GetInstigator();
-
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	
-	EquipedGun = GetWorld()->SpawnActor<AGunBase>(
-	   SpawnClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-
-	if (EquipedGun && GetMesh() && ChildActors)
-	{
+		EquipedGun->SetActorHiddenInGame(true);
 		EquipedGun->SetActorEnableCollision(false);
-		EquipedGun->SetOwner(this);
-       
-		// 3. 무기를 손 소켓에 딱 붙여줍니다.
+		EquipedGun->SetOwner(nullptr);
+		EquipedGun->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
+
+	// 2. 월드에 배치된 모든 AGunBase 액터 찾기
+	TArray<AActor*> FoundGuns;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGunBase::StaticClass(), FoundGuns);
+
+	AGunBase* TargetGun = nullptr;
+	for (AActor* Actor : FoundGuns)
+	{
+		AGunBase* Gun = Cast<AGunBase>(Actor);
+		if (Gun)
+		{
+			Gun->SetActorHiddenInGame(true);
+			Gun->SetActorEnableCollision(false);
+			Gun->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+            
+			if (Gun->WeaponIndex == Index)
+			{
+				TargetGun = Gun;
+			}
+		}
+	}
+
+	// 3. 찾은 무기 장착
+	if (TargetGun)
+	{
+		EquipedGun = TargetGun;
+        
+		// 무기 활성화
+		EquipedGun->SetActorHiddenInGame(false);
+		EquipedGun->SetActorEnableCollision(true);
+        EquipedGun->SetOwner(this);
+		// 손 소켓에 부착
 		EquipedGun->AttachToComponent(
-		   GetMesh(),
-		   FAttachmentTransformRules::SnapToTargetIncludingScale,
-		   TEXT("GripPoint")
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("GripPoint")
 		);
-       
+        
 		EquipedGun->SetActorRelativeLocation(FVector::ZeroVector);
 		EquipedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
-
-		ChildActors->SetChildActorClass(WeaponBlueprintClasses[Index]); // 클래스 타입 갱신
-
-		if (ChildActors)
-		{
-			ChildActors->SetChildActorClass(SpawnClass);
-		}
-		EquipedGun->LoadData();
+		EquipedGun->PartsUpdate();
 		CurrentWeapon = Index;
-
-		UE_LOG(LogTemp, Log, TEXT("🔥 완벽한 융합 성공! C++ 자식 다형성 보장 및 컴포넌트 동기화 완료! 클래스: %s"), *EquipedGun->GetClass()->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] ChildActor를 AGunBase 타입으로 형변환(Cast)하는데 실패했습니다."));
 	}
 }
 void AAPlayer::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	
-	// 컨트롤로가 없으면 호출하지 않음.
 	if (Controller != nullptr)
 	{
-		// 입력방향으로 이동
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y );
 		AddMovementInput(GetActorRightVector(), MovementVector.X );
 	}
@@ -166,17 +146,13 @@ void AAPlayer::Look(const FInputActionValue& Value)
 		
 		if (PController && bIsRecoveringRecoil)
 		{
-			// 현재 마우스 입력이 반영된 최종 회전값을 타겟으로 동기화
 			UpRecoilTargetRotation = PController->GetControlRotation();
-             
-			// 만약 마우스를 아래로 크게 내려서 이미 원래 쐈던 위치보다 더 내려갔다면 복구를 종료합니다.
 			bIsRecoveringRecoil = false;
 		}
 	}
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	
 	if (EquipedGun &&EquipedGun->CanReload())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
@@ -199,8 +175,8 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 
 		if (AnimInstance && ShootMontage)
 		{
-			FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
-			FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+			FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); 
+			FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     
 			AnimInstance->Montage_Play(ShootMontage, 1.0f);
 			EquipedGun->FireGun(CameraLocation,CameraForward);
 			
@@ -221,8 +197,6 @@ void AAPlayer::Shooting(const FInputActionValue& Value)
 				RecoilRot.Pitch += FinalRecoilPitch; 
 				PController->SetControlRotation(RecoilRot);
 				bIsRecoveringRecoil = true;
-					
-				LevelUpStat();
 			}
 		}
 	}
@@ -231,15 +205,11 @@ void AAPlayer::Interact(const FInputActionValue& Value)
 {
 	if (CurrentTargetStructure)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[Player] %s 토템과 상호작용을 시작합니다."), *CurrentTargetStructure->GetName());
 		CurrentTargetStructure->Interact(this);
         CurrentTargetStructure = nullptr;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[Player] 주변에 상호작용 가능한 토템이 없습니다."));
-	}
 }
+
 void AAPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -272,6 +242,7 @@ void AAPlayer::Tick(float DeltaTime)
 	}
 
 }
+
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
 	if (ActiveSkillComp)
@@ -279,6 +250,7 @@ void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 		ActiveSkillComp->ActiveSkill();
 	}
 }
+
 void AAPlayer::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
@@ -290,6 +262,7 @@ void AAPlayer::NotifyControllerChanged()
 		}
 	}
 }
+
 void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -312,12 +285,12 @@ void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		
 	}
 }
+
 void AAPlayer::LoadData(int32 GetLevel, int32 GetSkill, int32 GetWeapon)
 {
 	CurrentLevel = GetLevel;
 	CurrentWeapon = GetWeapon;
 	CurrentSkill = GetSkill;
-	
 	for (USkillBaseComp* Skill : MySkillInventory)
 	{
 		if (Skill)
@@ -365,16 +338,13 @@ void AAPlayer::SaveData()
 }
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Current HP: %d , Add HP: %d"),CurrentHp, Add_Hp);
 	if (CurrentHp + Add_Hp >= MaxHp)
 	{
 		CurrentHp = MaxHp;
-		UE_LOG(LogTemp, Warning, TEXT("Current HP: %d"),CurrentHp);
 	}
 	else
 	{
 		CurrentHp += Add_Hp;
-		UE_LOG(LogTemp, Warning, TEXT("Current HP: %d"),CurrentHp);
 	}
 }
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
@@ -452,24 +422,22 @@ float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
 	CurrentHp = FMath::Clamp(CurrentHp, 0, MaxHp);
-	
-	UE_LOG(LogTemp, Warning,
-		TEXT("Player Hit! Damage: %f CurrentHP: %d"),
-		DamageAmount,
-		CurrentHp
-	);
 	if (CurrentHp <= 0.f)
 	{
 		OnDeath();
 	}
-
 	return DamageAmount;
 }
+void AAPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	SaveData();
+	Super::EndPlay(EndPlayReason);
+}
+
 void AAPlayer::OnDeath()
 {
 	// 부활  - bool 값 이 true인지 확인해서 
 	// true 이면 부활 하도록 로그 수정하기
 	//if ()
 	// 사망 로그 호출
-	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
 }
