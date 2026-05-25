@@ -195,7 +195,7 @@ void AMonsterBase::SpawnBossPortal()
 	}
 }
 
-void AMonsterBase::BossAfterDeadth()
+void AMonsterBase::BossAfterDeath()
 {
 	if (ULevelFlowSubsystem* LevelFlowSubsystem = GetGameInstance()->GetSubsystem<ULevelFlowSubsystem>())
 	{
@@ -206,5 +206,26 @@ void AMonsterBase::BossAfterDeadth()
 				GS->OnStageEnd.Broadcast();
 			}
 		}
+	}
+}
+
+void AMonsterBase::RotateToPlayerTarget()
+{
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	if (!PlayerPawn) return;
+
+	// 1. 나와 플레이어 사이의 방향 벡터를 구합니다.
+	FVector OwnerLocation = GetActorLocation();
+	FVector PlayerLocation = PlayerPawn->GetActorLocation();
+	FVector TargetDirection = PlayerLocation - OwnerLocation;
+
+	// 2. 몬스터의 고개가 하늘이나 땅으로 꺾이지 않도록 Z축(높이)은 평평하게 0으로 맞춥니다.
+	TargetDirection.Z = 0.f;
+
+	// 3. 방향 벡터를 회전값(Rotator)으로 변환하여 몬스터의 회전값으로 강제 설정합니다.
+	if (!TargetDirection.IsNearlyZero())
+	{
+		FRotator TargetRotation = TargetDirection.Rotation();
+		SetActorRotation(TargetRotation);
 	}
 }
