@@ -47,7 +47,7 @@ void UMeleeAttackComponent::CheckHit()
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
 	
 	bool bHit = GetWorld()->SweepSingleByObjectType(HitResult, Start, End, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(AttackRadius), Params);
-	
+	Owner->RotateToPlayerTarget();
 	if (bHit)
 	{
 		AActor* HitActor = HitResult.GetActor();

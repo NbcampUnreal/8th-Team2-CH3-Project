@@ -4,6 +4,7 @@
 #include "RangedAttackComponent.h"
 #include "MonsterBase.h"
 #include "MonsterProjectile.h"
+#include "MonsterSpawner.h"
 #include "MonsterStatComponent.h"
 #include "Kismet/KismetMathLibrary.h" 
 #include "Kismet/GameplayStatics.h"   
@@ -64,7 +65,10 @@ void URangedAttackComponent::CheckHit()
 		return;
 	}
 	
-	
+	if (AMonsterBase* Monster = Cast<AMonsterBase>(OwnerCharacter))
+	{
+		Monster->RotateToPlayerTarget();
+	}
 	if (AMonsterProjectile* Projectile = Cast<AMonsterProjectile>(PooledActor))
 	{
 		// 주인 설정 및 데미지 전달
