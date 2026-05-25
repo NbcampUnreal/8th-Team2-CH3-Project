@@ -14,17 +14,21 @@ class CH3_TEAM2_API AAGameState : public AGameState
 public:
 	AAGameState();
 
-	UPROPERTY(BlueprintAssignable, Category = "GameFlow")
-	FOnStageEndDelegate OnStageEnd;
-
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	UFUNCTION()
+	void OnMasterGameEnd();
+	
+	UFUNCTION()
+	void OnMasterShowStatisticsUI();
+	
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	void BroadcastSaveTime() const;
 
 private:
 	float PlayTime = 0.0f;
 	bool bIsTracking = false;
+	
+	void SaveTime(bool bIsLastStage);
 };

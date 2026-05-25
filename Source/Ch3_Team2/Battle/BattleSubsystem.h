@@ -28,6 +28,9 @@ public:
 	void BroadcastBattleResult();
 	
 	UFUNCTION()
+	void ExecuteBattleResultBroadcast();
+	
+	UFUNCTION()
 	void BroadcastEliteMonsterKills();
 
 	UFUNCTION()
