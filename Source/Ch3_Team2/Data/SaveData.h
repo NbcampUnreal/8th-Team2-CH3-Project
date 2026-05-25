@@ -10,16 +10,13 @@ class CH3_TEAM2_API USaveData : public USaveGame
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(SaveGame) int32 SaveVersion = 2;
+	UPROPERTY(SaveGame) int32 SaveVersion = 3;
 	
-	UPROPERTY(SaveGame) int32 PlayerLevel = 0;
+	UPROPERTY(SaveGame) TArray<int32> RelicIDs;
+	UPROPERTY(SaveGame) int32 PlayerLevel = 0, PlayerSkill = 0, PlayerWeapon = 0;
+	UPROPERTY(SaveGame) int32 GripLevel = 0, ScopeLevel = 0, MagazineLevel = 0, BulletLevel = 0;
 	
-	UPROPERTY(SaveGame) int32 Character = 0; // Enum
-	UPROPERTY(SaveGame) int32 Weapon = 0; // Enum
-	
-	UPROPERTY(SaveGame) float Stage1Time = 0;
-	UPROPERTY(SaveGame) float Stage2Time = 0;
-	UPROPERTY(SaveGame) float Stage3Time = 0;
+	UPROPERTY(SaveGame) TArray<float> StageClearTime = {0.f, 0.f, 0.f};
 	
 	UPROPERTY(SaveGame) int32 MeleeKills = 0;
 	UPROPERTY(SaveGame) int32 RangedKills = 0;
@@ -28,6 +25,4 @@ public:
 	UPROPERTY(SaveGame) int32 BossKills = 0;
 	
 	UPROPERTY(SaveGame) int32 TotalDamage = 0;
-	
-    UPROPERTY(SaveGame) int32 Currency = 0;
 };

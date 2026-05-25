@@ -1,7 +1,11 @@
 #include "RelicManager.h"
-#include "Ch3_Team2/RelicEffect/RelicEffectBase.h"
+
+#include "MonsterBase.h"
+#include "MonsterProjectile.h"
+#include "MonsterStatComponent.h"
 #include "Ch3_Team2/APlayer.h"
 #include "Kismet/GameplayStatics.h"
+#include "Ch3_Team2/Data/MasterSubsystem.h"
 
 
 
@@ -10,37 +14,21 @@ ARelicManager::ARelicManager()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
-{
-	if (NewRelic.RelicId == 0) return;
-	
-	UE_LOG(LogTemp, Warning,TEXT("Relic Selected : %s"), *NewRelic.RelicName.ToString());
-	OwnedRelics.Add(NewRelic);
-	RandomRelicOption.Empty();
-	
-	if (NewRelic.Grade == ERelicGrade::Epic || NewRelic.Grade == ERelicGrade::Legendary)
-	{
-		BlockedRelicIDs.Add(NewRelic.RelicId);
-	}
-	
-	if (!NewRelic.EffectClass) return;
-	
-	URelicEffectBase* Effect = NewObject<URelicEffectBase>(this, NewRelic.EffectClass);
-	AAPlayer* Player =
-	Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	
-	if (Effect)
-	{
-		Effect->ApplyRelic(Player,NewRelic);
-	}
-}
-
 void ARelicManager::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ARelicManager::LodeData(TArray<int32> RelicIDs)
+{
+	
+	ApplyManager = GetWorld()->SpawnActor<ARelicApplyManager>(ApplyManagerClass);
+	
+	if (!ApplyManager) return;
 	
 	RandomRelicOption.Empty();
 	AllRelics.Empty();
+	OwnedRelicIDs.Empty();
 
 	if (!RelicDataTable) return;
 	
@@ -58,6 +46,54 @@ void ARelicManager::BeginPlay()
 		
 		AllRelics.Add(*RelicPtr);
 	}
+	
+	if (RelicIDs.Num() == 0)
+	{
+		return;
+	}
+	
+	OwnedRelicIDs.Empty();
+	
+	for (int32 RelicID : RelicIDs)
+	{
+		OwnedRelicIDs.Add({RelicID, false});
+	}
+}
+
+void ARelicManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{ 
+	MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if (MasterSubsystem)
+	{
+		TArray<int32> PureRelicIDs;
+		
+		for (const TPair<int32, bool>& Pair : OwnedRelicIDs)
+		{
+			PureRelicIDs.Add(Pair.Key);
+		}
+		MasterSubsystem->OnSaveRelic.Broadcast(PureRelicIDs);
+	}
+	
+	Super::EndPlay(EndPlayReason);
+}
+
+void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
+{
+	if (NewRelic.RelicId == 0) return;
+	
+	UE_LOG(LogTemp, Warning,TEXT("Relic Selected : %s"), *NewRelic.RelicName.ToString());
+	
+	OwnedRelicIDs.Add({NewRelic.RelicId, false});
+	
+	RandomRelicOption.Empty();
+	
+	if (NewRelic.RelicId >= 1017)
+	{
+		BlockedRelicIDs.Add(NewRelic.RelicId);
+	}
+	
+	ApplyManager->ApplyRelicById(OwnedRelicIDs);
+	
 }
 
 ERelicGrade ARelicManager::NormalRollGrade()
@@ -93,7 +129,10 @@ void ARelicManager::RandomRelic()
 				return RelicData.RelicId == PickedRelic.RelicId;
 			});
 		
-		if (!PickedRelic.RelicId) return;
+		if (!PickedRelic.RelicId)
+		{
+			return;
+		}
 		
 		bool bIsBlocked = BlockedRelicIDs.Contains(PickedRelic.RelicId);
 
@@ -129,12 +168,6 @@ bool ARelicManager::GetRandomRelicByGrade(
 	return true;
 }
 
-void ARelicManager::OnEliteMonsterDead()
-{
-	RandomRelic();
-	
-	if (OnRelicRewardGenerated.IsBound())
-	{
-		OnRelicRewardGenerated.Broadcast(RandomRelicOption);
-	}
-}
+
+
+

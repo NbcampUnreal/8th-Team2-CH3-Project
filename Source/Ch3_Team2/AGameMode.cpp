@@ -1,17 +1,28 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "AGameMode.h"
 #include "APlayer.h"
 #include "AGameState.h"
+#include "GunBase.h"
+#include "RelicManager.h"
+#include "Data/SaveSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 
 AAGameMode::AAGameMode()
 {
-	// 클레스 이름을 통해서 클레스를 반환해주는 시스템 이다.
-	// PawnClass - 케릭터 Class
 	DefaultPawnClass = AAPlayer::StaticClass();
-	// 플레이어 Controller
-	//PlayerControllerClass = AProjectAPlayerController::StaticClass();
-	// Game State 설정
 	GameStateClass = AAGameState::StaticClass();
+}
+
+void AAGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
+	ARelicManager* Relic = Cast<ARelicManager>(UGameplayStatics::GetActorOfClass(GetWorld(), ARelicManager::StaticClass()));
+	AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AAPlayer::StaticClass()));
+	AGunBase* Gun = Cast<AGunBase>(UGameplayStatics::GetActorOfClass(GetWorld(), AGunBase::StaticClass()));
+	
+	// TODO: 순서 보장하면서 값만 넘기기
+	// Relic->LoadData(SaveSubsystem->RelicIds);
+	Player->LoadData(SaveSubsystem->GetPlayerLevel(), SaveSubsystem->GetPlayerSkill(), SaveSubsystem->GetPlayerWeapon());
+	// Gun->LoadData(SaveSubsystem->GetGripLevel(), SaveSubsystem->GetScopeLevel(), SaveSubsystem->GetMagazineLevel(), SaveSubsystem->GetBulletLevel());
 }

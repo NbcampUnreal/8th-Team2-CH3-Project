@@ -22,11 +22,9 @@ void ULevelFlowSubsystem::TravelToNextLevel()
         return;
     }
 
-    const int32 NextIndex = CurrentLevelIndex + 1;
-
-    if (LoadedFlowData->Levels.IsValidIndex(NextIndex))
+    if (LoadedFlowData->Levels.IsValidIndex(CurrentLevelIndex + 1))
     {
-        TravelToLevelByIndex(NextIndex);
+        TravelToLevelByIndex(CurrentLevelIndex + 1);
     }
     else
     {
@@ -34,24 +32,9 @@ void ULevelFlowSubsystem::TravelToNextLevel()
     }
 }
 
-bool ULevelFlowSubsystem::IsLastLevel() const
-{
-    if (!LoadedFlowData)
-    {
-        return false;
-    }
-    
-    return CurrentLevelIndex == LoadedFlowData->Levels.Num() - 1;
-}
-
 void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
 {
-    if (!LoadedFlowData)
-    {
-        return;
-    }
-    
-    if (!LoadedFlowData->Levels.IsValidIndex(LevelIndex))
+    if (!LoadedFlowData || !LoadedFlowData->Levels.IsValidIndex(LevelIndex))
     {
         return;
     }
@@ -62,13 +45,31 @@ void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
         return;
     }
 
+    PrevLevelIndex = CurrentLevelIndex;
     CurrentLevelIndex = LevelIndex;
+    
+    PreloadNextLevel();  // ← 여기 추가, 다음 레벨 미리 로드 시작
 
     const FName LevelName = FName(*FPackageName::GetShortName(LevelRef.GetLongPackageName()));
     UGameplayStatics::OpenLevel(this, LevelName);
 }
 
-// 아무 레벨에서 시작해도 대응이 될 수 있게 만들어둠
+void ULevelFlowSubsystem::PreloadNextLevel()
+{
+    if (!LoadedFlowData)
+    {
+        return;
+    }
+
+    int32 NextIndex = LoadedFlowData->Levels.IsValidIndex(CurrentLevelIndex + 1) ? CurrentLevelIndex + 1 : 0;
+
+    const TSoftObjectPtr<UWorld>& LevelRef = LoadedFlowData->Levels[NextIndex];
+    if (!LevelRef.IsNull())
+    {
+        LoadPackageAsync(LevelRef.GetLongPackageName(), nullptr, 0, PKG_ContainsMap);
+    }
+}
+
 void ULevelFlowSubsystem::SyncCurrentLevelIndex()
 {
     if (!LoadedFlowData)

@@ -3,7 +3,15 @@
 #include "Data/SaveData.h"
 #include "Kismet/GameplayStatics.h"
 
-const FString USaveSubsystem::SlotName = TEXT("MainSave");
+FString USaveSubsystem::GetSlotName() const
+{
+    FDateTime Now = FDateTime::Now();
+    return FString::Printf(TEXT("Save_%04d%02d%02d_%02d%02d%02d"),
+        Now.GetYear(), Now.GetMonth(), Now.GetDay(),
+        Now.GetHour(), Now.GetMinute(), Now.GetSecond()
+    );
+    // 결과 예시: Save_20250524_143022
+}
 
 void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -17,7 +25,11 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
     if (MasterSubsystem)
     {
-        MasterSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnBattleResultReceived);
+        MasterSubsystem->OnBattleResult.AddDynamic(this, &USaveSubsystem::OnMasterBattleResult);
+        MasterSubsystem->OnSaveTime.AddDynamic(this, &USaveSubsystem::OnMasterSaveTime);
+        MasterSubsystem->OnSaveRelic.AddDynamic(this, &USaveSubsystem::OnMasterSaveRelic);
+        MasterSubsystem->OnSavePlayer.AddDynamic(this, &USaveSubsystem::OnMasterSavePlayer);
+        MasterSubsystem->OnSaveGun.AddDynamic(this, &USaveSubsystem::OnMasterSaveGun);
     }
 }
 
@@ -25,8 +37,15 @@ void USaveSubsystem::Deinitialize()
 {
     if (MasterSubsystem)
     {
-        MasterSubsystem->OnBattleResult.RemoveDynamic(this, &USaveSubsystem::OnBattleResultReceived);
+        MasterSubsystem->OnSaveGun.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveGun);
+        MasterSubsystem->OnSavePlayer.RemoveDynamic(this, &USaveSubsystem::OnMasterSavePlayer);
+        MasterSubsystem->OnSaveRelic.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveRelic);
+        MasterSubsystem->OnSaveTime.RemoveDynamic(this, &USaveSubsystem::OnMasterSaveTime);
+        MasterSubsystem->OnBattleResult.RemoveDynamic(this, &USaveSubsystem::OnMasterBattleResult);
     }
+    
+    CurrentSlotName = GetSlotName();
+    SaveGame();
 
     // 부모를 마지막에 해제
     Super::Deinitialize();
@@ -38,118 +57,77 @@ void USaveSubsystem::SaveGame()
     {
         return;
     }
-    UGameplayStatics::SaveGameToSlot(CurrentSave, SlotName, 0);
+    UGameplayStatics::SaveGameToSlot(CurrentSave, CurrentSlotName, 0);
 }
 
 void USaveSubsystem::LoadGame()
 {
-    if (UGameplayStatics::DoesSaveGameExist(SlotName, 0))
-    {
-        CurrentSave = Cast<USaveData>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
-    }
-
-    if (!CurrentSave)
-    {
-        CurrentSave = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
-    }
+    CurrentSave = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
+    
+    // if (UGameplayStatics::DoesSaveGameExist(CurrentSlotName, 0))
+    // {
+    //     CurrentSave = Cast<USaveData>(UGameplayStatics::LoadGameFromSlot(CurrentSlotName, 0));
+    // }
+    //
+    // if (!CurrentSave)
+    // {
+    //     CurrentSave = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
+    // }
 }
 
-void USaveSubsystem::AddCurrency(int32 Amount)
+void USaveSubsystem::OnMasterBattleResult(int32 MeleeKills, int32 RangedKills, int32 EliteMeleeKills, int32 EliteRangedKills, int32 BossKills, int32 GlobalTotalDamage)
 {
     if (!CurrentSave)
     {
         return;
     }
     
-    CurrentSave->Currency += Amount;
-    if (MasterSubsystem)
-    {
-        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
-    }
+    CurrentSave->TotalDamage        = GlobalTotalDamage;
+    
+    CurrentSave->MeleeKills         = MeleeKills;
+    CurrentSave->RangedKills        = RangedKills;
+    CurrentSave->EliteMeleeKills    = EliteMeleeKills;
+    CurrentSave->EliteRangedKills   = EliteRangedKills;
+    CurrentSave->BossKills          = BossKills;
 }
 
-int32 USaveSubsystem::GetCurrency() const
-{
-    return CurrentSave ? CurrentSave->Currency : 0;
-}
-
-bool USaveSubsystem::TrySpendCurrency(int32 Amount)
-{
-    if (!CurrentSave || CurrentSave->Currency < Amount)
-    {
-        return false;
-    }
-
-    CurrentSave->Currency -= Amount;
-    if (MasterSubsystem)
-    {
-        MasterSubsystem->OnCurrencyChanged.Broadcast(CurrentSave->Currency, Amount);
-    }
-    return true;
-}
-
-void USaveSubsystem::OnBattleResultReceived(const TArray<FMonsterKillReport>& KillReports, int32 GlobalTotalDamage)
+void USaveSubsystem::OnMasterSaveTime(int32 StageIndex, float ClearTime)
 {
     if (!CurrentSave)
     {
         return;
     }
     
-    CurrentSave->TotalDamage += GlobalTotalDamage;
-    
-    for (const FMonsterKillReport& Report : KillReports)
-    {
-        switch (Report.MonsterGrade)
-        {
-            case EMonsterGrade::Melee:
-                CurrentSave->MeleeKills += Report.KillCount;
-                break;
-            case EMonsterGrade::Ranged:
-                CurrentSave->RangedKills += Report.KillCount;
-                break;
-            case EMonsterGrade::EliteMelee:
-                CurrentSave->EliteMeleeKills += Report.KillCount;
-                break;
-            case EMonsterGrade::EliteRanged:
-                CurrentSave->EliteRangedKills += Report.KillCount;
-                break;
-            case EMonsterGrade::Boss:
-                CurrentSave->BossKills += Report.KillCount;
-                break;
-            
-            default:
-                break;
-        }
-    }
-}
-
-// TODO: 모든 스테이지 종료시 클리어 타임 저장
-void USaveSubsystem::OnStageCleared(int32 StageIndex, float ClearTime)
-{
-    if (!CurrentSave)
+    if (ClearTime <= 0.f)
     {
         return;
     }
-
-    auto UpdateBest = [](float& Slot, float NewTime)
+    
+    if (!CurrentSave->StageClearTime.IsValidIndex(StageIndex))
     {
-        if (NewTime <= 0.f)
-        {
-            return;
-        }
-        if (Slot <= 0.f || NewTime < Slot)
-        {
-            Slot = NewTime;
-        }
-    };
-
-    switch (StageIndex)
-    {
-        case 1: UpdateBest(CurrentSave->Stage1Time, ClearTime); break;
-        case 2: UpdateBest(CurrentSave->Stage2Time, ClearTime); break;
-        case 3: UpdateBest(CurrentSave->Stage3Time, ClearTime); break;
-        default: break;
+        UE_LOG(LogTemp, Warning, TEXT("잘못된 StageIndex: %d"), StageIndex);
+        return;
     }
 
-    SaveGame();
+    CurrentSave->StageClearTime[StageIndex] = ClearTime;
+}
+
+void USaveSubsystem::OnMasterSaveRelic(TArray<int32> RelicIDs)
+{
+    CurrentSave->RelicIDs = RelicIDs;
+}
+
+void USaveSubsystem::OnMasterSavePlayer(int32 PlayerLevel, int32 PlayerSkill, int32 PlayerWeapon)
+{
+    CurrentSave->PlayerLevel = PlayerLevel;
+    CurrentSave->PlayerSkill = PlayerSkill;
+    CurrentSave->PlayerWeapon = PlayerWeapon;
+}
+
+void USaveSubsystem::OnMasterSaveGun(int32 GripLevel, int32 ScopeLevel, int32 MagazineLevel, int32 BulletLevel)
+{
+    CurrentSave->GripLevel     = GripLevel;
+    CurrentSave->ScopeLevel    = ScopeLevel;
+    CurrentSave->MagazineLevel = MagazineLevel;
+    CurrentSave->BulletLevel   = BulletLevel;
 }

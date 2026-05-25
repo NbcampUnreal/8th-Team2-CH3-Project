@@ -77,7 +77,7 @@ protected:
 	// 집탄률	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Stat")
 	float SpreadAngleDegrees = 12.0f;
-	
+		
 	// 현제 장전 여부
 	bool bReloadingCheck = false;
 	// 장전 TimeHandle

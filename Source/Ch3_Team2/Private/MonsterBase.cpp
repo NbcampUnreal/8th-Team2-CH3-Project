@@ -7,6 +7,7 @@
 #include "MonsterAttackComponent.h"
 #include "MonsterStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
 AMonsterBase::AMonsterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -23,37 +24,74 @@ void AMonsterBase::BeginPlay()
 	
 }
 
+void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 FOnReadyToReturn& AMonsterBase::GetOnReadyToReturn()
 {
 	return OnMonsterDeath;
 }
 
+void AMonsterBase::PlayDeathAnim()
+{
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+}
+
+void AMonsterBase::DropExpItem()
+{
+	UWorld* World = GetWorld();
+	if (World && ExpItemClass)
+	{
+		FVector SpawnLocation = GetActorLocation();
+		FRotator SpawnRotation = GetActorRotation();
+        
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+
+		//경험치 아이템을 소환
+		World->SpawnActor<AActor>(ExpItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+	}
+}
+
 void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 {
+	if (DeathTimerHandle.IsValid())
+	{
+		return;
+	}
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->StopMovementImmediately();
 	
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		if (UStateTreeAIComponent* STComp = AIController->FindComponentByClass<UStateTreeAIComponent>())
+		{
+			
+			STComp->StopLogic(TEXT("Aborted"));
+			STComp->Deactivate();
+		}
+	}
+	
+	PlayDeathAnim();
 	//2초뒤 풀로 돌아감
 	GetWorld()->GetTimerManager().SetTimer(DeathTimerHandle,this,&AMonsterBase::AfterDeath,2.f,false);
 }
 
-
-
 void AMonsterBase::SetMonsterStats(const FMonsterStats& InStats)
 {
+	StatComp->SetDead(false);
 	StatComp->InitializeStats(InStats);
-}
-
-void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
-{
-	
-	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
-	GetCharacterMovement()->StopMovementImmediately();
-	
-	SetActorHiddenInGame(false);
-	SetActorEnableCollision(true);
-	SetActorTickEnabled(true);
 	
 	//State tree 활성화
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
@@ -66,8 +104,26 @@ void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
 	}
 }
 
+void AMonsterBase::OnSpawnFromPool(const FTransform& Transform)
+{
+	SetActorLocationAndRotation(Transform.GetLocation(),Transform.GetRotation());
+	GetCharacterMovement()->StopMovementImmediately();
+	
+	SetActorHiddenInGame(false);
+	SetActorEnableCollision(true);
+	SetActorTickEnabled(true);
+}
+
 void AMonsterBase::OnReturnToPool()
 {
+	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
+	
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+	
+	GetCharacterMovement()->StopMovementImmediately();
+	
 	//State tree 비활성화
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
@@ -78,16 +134,17 @@ void AMonsterBase::OnReturnToPool()
 			STComp->Deactivate();
 		}
 	}
-	
-	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
-	SetActorTickEnabled(false);
-	
-	GetCharacterMovement()->StopMovementImmediately();
 }
 
 void AMonsterBase::AfterDeath()
 {
+	// 경험치 아이템 드롭
+	DropExpItem();
+	if (StatComp && StatComp->GetMonsterTag()== EMonsterGrade::Boss)
+	{
+		GEngine->AddOnScreenDebugMessage(-1,3,FColor::Green,TEXT("adlafkdjfald;fa"));
+		SpawnBossPortal();
+	}
 	GetWorld()->GetTimerManager().ClearTimer(DeathTimerHandle);
 	if (OnMonsterDeath.IsBound())
 	{
@@ -99,5 +156,25 @@ void AMonsterBase::AfterDeath()
 	}
 }
 
+void AMonsterBase::SpawnBossPortal()
+{
+	UWorld* World = GetWorld();
+	if (World && PortalClass)
+	{
+		FVector SpawnLocation = GetActorLocation() + FVector(0.f,0.f,100.f);
+        
+		FRotator SpawnRotation = GetActorRotation();
+        
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = GetInstigator();
+		
+		AActor* Portal = World->SpawnActor<AActor>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+		if (!Portal)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn boss portal at %s"), *SpawnLocation.ToString());
+		}
+	}
+}
 
 

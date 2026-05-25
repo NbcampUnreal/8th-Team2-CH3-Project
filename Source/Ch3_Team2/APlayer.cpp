@@ -1,12 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "APlayer.h"
-
-#include <rapidjson/internal/ieee754.h>
-
 #include "SkillBaseComp.h"
-
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -16,9 +10,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "GunBase.h"
 #include "InputActionValue.h"
+#include "Data/MasterSubsystem.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "HealTotem.h"
+#include "Prop/HealTotem.h"
+
 
 // Sets default values
 AAPlayer::AAPlayer()
@@ -32,46 +28,117 @@ AAPlayer::AAPlayer()
 
 	GetMesh()->AddRelativeLocation(FVector(10.0f,0,0));
 	GetMesh()->SetupAttachment(FirstPersonCameraComponent);
-	ChildActor = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
-	ChildActor->SetupAttachment(GetMesh());
+	ChildActors = CreateDefaultSubobject<UChildActorComponent>(TEXT("child"));
+	ChildActors->SetupAttachment(GetMesh());
 	
 	PrimaryActorTick.bCanEverTick = true;
 	
 	MagnetComp = CreateDefaultSubobject<USphereComponent>(TEXT("MagnetComp"));
 	MagnetComp->SetupAttachment(RootComponent);
-	DropExpComp = CreateDefaultSubobject<USphereComponent>(TEXT("DropExpComp"));
-	DropExpComp->SetupAttachment(MagnetComp);
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 	CurrentTargetStructure = nullptr;
 }
 
 void AAPlayer::BeginPlay()
 {
-	
 	Super::BeginPlay();
-	
-	MagnetComp->SetSphereRadius(MagnetRadius);
-	GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
-	
 	PController = Cast<APlayerController>(GetController());
-	EquipedGun = Cast<AGunBase>(ChildActor->GetChildActor());
+	LoadData(CurrentLevel,CurrentSkill,CurrentWeapon);
 	
-	if (ChildActor && GetMesh())
+}
+
+
+void AAPlayer::SwitchSkill(int32 Index)
+{
+	if (!MySkillInventory.IsValidIndex(Index) || !MySkillInventory[Index])
 	{
-		ChildActor->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			TEXT("GripPoint") // 사용할 소켓 이름
-		);
+		UE_LOG(LogTemp, Warning, TEXT("[SwitchSkill] 유효하지 않은 스킬 인덱스이거나 스킬이 비어있습니다."));
+		return;
 	}
-	
-	if (SkillComp)
+
+	if (ActiveSkillComp)
 	{
-		SkillInstance = NewObject<USkillBaseComp>(this, SkillComp);
-		if (USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance))
+		ActiveSkillComp->SetComponentTickEnabled(false);
+		ActiveSkillComp->UnregisterComponent();
+	}
+
+	ActiveSkillComp = MySkillInventory[Index];
+	if (ActiveSkillComp)
+	{
+		ActiveSkillComp->RegisterComponent();
+		if (ActiveSkillComp->CurrentSkillCoolTime > 0.0f)
 		{
-			Skill->RegisterComponent();
+			ActiveSkillComp->SetComponentTickEnabled(true);
 		}
+		CurrentSkill = Index;
+
+		UE_LOG(LogTemp, Log, TEXT("스킬 교체 완료: %s"), *ActiveSkillComp->GetName());
+	}
+}
+
+void AAPlayer::SwitchWeapon(int32 Index)
+{
+	if (!WeaponBlueprintClasses.IsValidIndex(Index) || !WeaponBlueprintClasses[Index])
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SwitchWeapon] 유효하지 않은 인덱스이거나 무기가 비어있습니다."));
+		return;
+	}
+
+	UClass* SpawnClass = WeaponBlueprintClasses[Index];
+	if (!SpawnClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] %d 번 인덱스의 블루프린트 에셋이 기어코 None입니다!"), Index);
+		return;
+	}
+	// 1. 기존 무기 및 컴포넌트 내부 액터가 있다면 확실하게 제거
+	if (EquipedGun)
+	{
+		EquipedGun->Destroy();
+		EquipedGun = nullptr;
+	}
+	if (ChildActors)
+	{
+		ChildActors->SetChildActorClass(nullptr); 
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	EquipedGun = GetWorld()->SpawnActor<AGunBase>(
+	   SpawnClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+
+	if (EquipedGun && GetMesh() && ChildActors)
+	{
+		EquipedGun->SetActorEnableCollision(false);
+		EquipedGun->SetOwner(this);
+       
+		// 3. 무기를 손 소켓에 딱 붙여줍니다.
+		EquipedGun->AttachToComponent(
+		   GetMesh(),
+		   FAttachmentTransformRules::SnapToTargetIncludingScale,
+		   TEXT("GripPoint")
+		);
+       
+		EquipedGun->SetActorRelativeLocation(FVector::ZeroVector);
+		EquipedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+
+		ChildActors->SetChildActorClass(WeaponBlueprintClasses[Index]); // 클래스 타입 갱신
+
+		if (ChildActors)
+		{
+			ChildActors->SetChildActorClass(SpawnClass);
+		}
+		EquipedGun->LoadData();
+		CurrentWeapon = Index;
+
+		UE_LOG(LogTemp, Log, TEXT("🔥 완벽한 융합 성공! C++ 자식 다형성 보장 및 컴포넌트 동기화 완료! 클래스: %s"), *EquipedGun->GetClass()->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SwitchWeapon] ChildActor를 AGunBase 타입으로 형변환(Cast)하는데 실패했습니다."));
 	}
 }
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -109,54 +176,57 @@ void AAPlayer::Look(const FInputActionValue& Value)
 }
 void AAPlayer::Reload(const FInputActionValue& Value)
 {
-	if (EquipedGun->CanReload())
+	
+	if (EquipedGun &&EquipedGun->CanReload())
 	{
-		// 1. 현재 상속받아 사용 중인 기본 Mesh에서 애님 인스턴스를 추출합니다.
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-		// 2. 애님 인스턴스와 우리가 에디터에서 등록할 몽타주 에셋이 모두 안전하게 존재할 때만 실행합니다.
 		if (AnimInstance && ReloadMontage)
 		{
-			if (!AnimInstance->Montage_IsPlaying(ReloadMontage))
-			{
-				// 3. 몽타주를 재생합니다. (인자값: 몽타주에셋, 재생속도배율)
-				AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
-			}
+			AnimInstance->Montage_Play(ReloadMontage, EquipedGun->GetReloadSpeed());
 		}
 	}
 }
 void AAPlayer::Shooting(const FInputActionValue& Value)
 {
-	if (EquipedGun->HasAmmo())
+	if (!EquipedGun)
+	{
+		return;
+	}
+	
+	if (EquipedGun && EquipedGun->HasAmmo())
 	{
 		UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+
 		if (AnimInstance && ShootMontage)
 		{
-			if (!AnimInstance->Montage_IsPlaying(ShootMontage))
-			{
-				FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
-				FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
-				AnimInstance->Montage_Play(ShootMontage, 1.0f);
-				EquipedGun->FireGun(CameraLocation,CameraForward);
-				float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
-				RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			FVector CameraLocation = FirstPersonCameraComponent->GetComponentLocation(); // Get World Location 대응
+			FVector CameraForward  = FirstPersonCameraComponent->GetForwardVector();     // Get Forward Vector 대응
+			AnimInstance->Montage_Play(ShootMontage, 1.0f);
+			EquipedGun->FireGun(CameraLocation,CameraForward);
 			
-				if (PController)
+				
+			float FinalRecoilPitch = EquipedGun->GetCurrentRecoilPitch();
+			RecoilRecoveryRotation += EquipedGun->GetCurrentRecoilPitch();
+			
+			if (PController)
+			{
+				if (!bIsRecoveringRecoil)
 				{
-					if (!bIsRecoveringRecoil)
-					{
-						UpRecoilTargetRotation = PController->GetControlRotation();
-					}
-					TargetRotation = PController->GetControlRotation();
-					FRotator RecoilRot = TargetRotation;
-					RecoilRot.Pitch += FinalRecoilPitch; 
-					PController->SetControlRotation(RecoilRot);
-					bIsRecoveringRecoil = true;
+					UpRecoilTargetRotation = PController->GetControlRotation();
+					SetActorTickEnabled(true);
+
 				}
+				TargetRotation = PController->GetControlRotation();
+				FRotator RecoilRot = TargetRotation	;
+				RecoilRot.Pitch += FinalRecoilPitch; 
+				PController->SetControlRotation(RecoilRot);
+				bIsRecoveringRecoil = true;
+					
+				LevelUpStat();
 			}
 		}
 	}
 }
-
 void AAPlayer::Interact(const FInputActionValue& Value)
 {
 	if (CurrentTargetStructure)
@@ -170,7 +240,6 @@ void AAPlayer::Interact(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Warning, TEXT("[Player] 주변에 상호작용 가능한 토템이 없습니다."));
 	}
 }
-
 void AAPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -185,15 +254,19 @@ void AAPlayer::Tick(float DeltaTime)
 				UpRecoilTargetRotation,
 				DeltaTime,
 				RecoilRecoverySpeed);
+			
 			float DeltaPitch = NewRotation.Pitch - CurrentRotation.Pitch;
 			PController->SetControlRotation(NewRotation);
 			RecoilRecoveryRotation -= DeltaPitch;
+			
 			if (FMath::IsNearlyEqual(
 				CurrentRotation.Pitch,
 				UpRecoilTargetRotation.Pitch,
 				0.05f) && RecoilRecoveryRotation <= 0)
 			{
 				bIsRecoveringRecoil = false;
+				SetActorTickEnabled(false);
+				
 			}
 		}
 	}
@@ -201,9 +274,9 @@ void AAPlayer::Tick(float DeltaTime)
 }
 void AAPlayer::SkillInputKey(const FInputActionValue& Value)
 {
-	if (USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance))
+	if (ActiveSkillComp)
 	{
-		Skill->ActiveSkill();
+		ActiveSkillComp->ActiveSkill();
 	}
 }
 void AAPlayer::NotifyControllerChanged()
@@ -219,33 +292,77 @@ void AAPlayer::NotifyControllerChanged()
 }
 void AAPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		
-		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAPlayer::Move);
 
-		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AAPlayer::Look);
 		
-		//Skill Activing
 		EnhancedInputComponent->BindAction(SkillActive, ETriggerEvent::Started, this, &AAPlayer::SkillInputKey);
 		
-		//Reload Activing
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AAPlayer::Reload);
 		
-		// Shoot Actiiving
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AAPlayer::Shooting);
 		
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAPlayer::Interact);
 		
 	}
 }
+void AAPlayer::LoadData(int32 GetLevel, int32 GetSkill, int32 GetWeapon)
+{
+	CurrentLevel = GetLevel;
+	CurrentWeapon = GetWeapon;
+	CurrentSkill = GetSkill;
+	
+	for (USkillBaseComp* Skill : MySkillInventory)
+	{
+		if (Skill)
+		{
+			Skill->DestroyComponent();
+		}
+	}
+	MySkillInventory.Empty();
+	for (TSubclassOf<USkillBaseComp> SkillClass : SkillBlueprintClasses)
+	{
+		if (!SkillClass) continue;
 
+		USkillBaseComp* NewSkill =
+			NewObject<USkillBaseComp>(this, SkillClass);
+
+		if (NewSkill)
+		{
+			NewSkill->RegisterComponent();
+			NewSkill->SetComponentTickEnabled(false);
+			MySkillInventory.Add(NewSkill);
+		}
+	}
+	
+	SwitchSkill(GetSkill);
+	
+	SwitchWeapon(GetWeapon);
+	if (MagnetComp)
+	{
+		MagnetComp->SetSphereRadius(MagnetRadius);
+	}
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
+	}
+	AddMaxHp(0);
+	AddPlayerSpeed(0);
+}
+void AAPlayer::SaveData()
+{
+	UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	if (MasterSubsystem)
+	{
+		MasterSubsystem->OnSavePlayer.Broadcast(CurrentLevel,CurrentSkill,CurrentWeapon);
+	}
+}
 void AAPlayer::AddCurrentHp(int32 Add_Hp)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Current HP: %d , Add HP: %d"),CurrentHp, Add_Hp);
@@ -260,87 +377,77 @@ void AAPlayer::AddCurrentHp(int32 Add_Hp)
 		UE_LOG(LogTemp, Warning, TEXT("Current HP: %d"),CurrentHp);
 	}
 }
-
 void AAPlayer::AddMaxHp(int32 Add_Max_Hp)
 {
-	MaxHp += Add_Max_Hp;
-	CurrentHp += Add_Max_Hp;
+	if (MaxHp + Add_Max_Hp >= 0)
+	{
+		RelicBonusHp += Add_Max_Hp;
+		MaxHp = BaseMaxHp + CurrentLevel* MaxHPIncrease + RelicBonusHp;
+		CurrentHp += Add_Max_Hp;
+	}
 }
 void AAPlayer::AddPlayerSpeed(float Add_Speed)
 {
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp)
-	{
+	{	
 		if (MoveSpeed + Add_Speed > 0.0f )
 		{
-			MoveSpeed += Add_Speed;
+			RelicBonusSpeed += Add_Speed;
+			MoveSpeed = BaseMoveSpeed + CurrentLevel*SpeedIncrease + RelicBonusSpeed; 
 			MoveComp->MaxWalkSpeed = MoveSpeed;
 			
 		}
 	}
 }
-void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
-{
-	if (ChildActor)
-	{
-		
-		if (!EquipGun)
-		{
-			return;
-		}
-		EquipGun->AddDamage(AddRelicBonus,TotalBonus,Critical);
-	}
-}
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
-	 if (Exp >= LevelUpExp &&Level < MaxLevel)
-	 {
-	 		Exp -= LevelUpExp;
-	 		LevelUpStat();
-		 }
+	if (Exp >= LevelUpExp &&CurrentLevel < MaxLevel)
+	{
+		Exp -= LevelUpExp;
+		LevelUpStat();
+	}
+}
+void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
+{
+	if (EquipedGun)
+	{
+		EquipedGun->AddDamage(AddRelicBonus, TotalBonus, Critical);
+	}
 }
 void AAPlayer::LevelUpStat()
 {
-	AddMaxHp(MaxHPIncrease);	
+	AddMaxHp(0);	
 	CurrentHp = MaxHp;
-	++Level;
-	// 여기 매직넘버는 추후 수정 예정
-	LevelUpExp =FMath::RoundToInt32(200.0f * FMath::Pow(1.35f, Level));
-	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
-	{
-		MoveSpeed += SpeedIncrease;
-		MoveComp->MaxWalkSpeed = MoveSpeed; // ★ 실제 걷기 속도에 반영 필수!
-	}
+	++CurrentLevel;
+	LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
+	AddPlayerSpeed(0);
 }
-void AAPlayer::DegreaseSkillCoolTime(float SkillCoolTime)
+void AAPlayer::DecreaseSkillCoolTime(float SkillCoolTime)
 {
-	if (SkillInstance)
+	if (ActiveSkillComp)
 	{
-		USkillBaseComp* Skill = Cast<USkillBaseComp>(SkillInstance);
-		Skill->DecreaseTimeSkill(SkillCoolTime);
+		USkillBaseComp* Skill = Cast<USkillBaseComp>(ActiveSkillComp);
+		Skill->	DecreaseTimeSkill(SkillCoolTime);
 	}
 }
 
 void AAPlayer::UpgradeWeaponParts(EPartsName PartsType)
 {
-	if (ChildActor && EquipGun)
+	if (EquipedGun)
 	{
-		EquipGun->SelectParts(PartsType);
+		EquipedGun->SelectParts(PartsType);
 	}
-}
-
+}		
 FGunParts AAPlayer::GetCurrentWeaponPartsData(EPartsName PartsType)
 {
-	if (ChildActor && EquipGun)
+	if (EquipedGun)
 	{
-		return EquipGun->GetPartsData(PartsType);
+		return EquipedGun->GetPartsData(PartsType);
 	}
-    
-	// 무기가 없다면 텅 빈 구조체 반환
 	return FGunParts();
-}
-
+}	
 float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,class AController* EventInstigator,AActor* DamageCauser)
 {
 	CurrentHp -= FMath::RoundToInt32(DamageAmount);
@@ -358,7 +465,6 @@ float AAPlayer::TakeDamage(float DamageAmount, struct FDamageEvent const& Damage
 
 	return DamageAmount;
 }
-
 void AAPlayer::OnDeath()
 {
 	// 부활  - bool 값 이 true인지 확인해서 
@@ -367,4 +473,3 @@ void AAPlayer::OnDeath()
 	// 사망 로그 호출
 	UE_LOG(LogTemp, Error, TEXT("Player Dead"));
 }
-

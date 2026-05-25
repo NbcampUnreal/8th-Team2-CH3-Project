@@ -28,9 +28,6 @@ public:
 	ERelicStatType RelicStat = ERelicStatType::MaxHP;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<URelicEffectBase> EffectClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Value = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
