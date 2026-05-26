@@ -468,6 +468,19 @@ void AAPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AAPlayer::OnDeath()
 {
+	UMasterSubsystem* MasterSubsystem =
+		GetGameInstance()->GetSubsystem<UMasterSubsystem>();
+	UE_LOG(LogTemp, Warning, TEXT("PlayerOnDeath"));
+	if (bIsOwnRelic1125)
+	{
+		if (MasterSubsystem)
+		{
+			MasterSubsystem->OnRelicInPossession.Broadcast();
+			UE_LOG(LogTemp, Warning, TEXT("BroadCast"));
+		}
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Not Chage"));
 	// 부활  - bool 값 이 true인지 확인해서 
 	// true 이면 부활 하도록 로그 수정하기
 	//if ()

@@ -27,7 +27,8 @@ public:
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
-	bool Revive();
+	UFUNCTION(BlueprintCallable, Category = "Relic")
+	void Revive();
 	
 	
 	void Relic1027();
@@ -36,7 +37,7 @@ public:
 	void Relic1119();
 	void Relic1120();
 	void Relic1121();
-	void Relic1122();
+	void Relic1122(TArray<TPair<int32,bool>> OwnRelicCount);
 	void Relic1123();
 	void Relic1124();
 	void Relic1125();
@@ -58,6 +59,8 @@ public:
 	UNiagaraSystem* LightningFX;
 	UPROPERTY(EditAnywhere, Category = "RelicNiagara")
 	UNiagaraSystem* Aurora;
+	UPROPERTY(EditAnywhere, Category = "RelicNiagara")
+	UNiagaraSystem* Diary;
 
 	
 protected:

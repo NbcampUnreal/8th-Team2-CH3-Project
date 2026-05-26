@@ -11,6 +11,8 @@
 #include "MonsterBase.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/WidgetComponent.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 
 void ARelicApplyManager::ApplyRelicById(TArray<TPair<int32, bool>> &RelicIDs)
 {
@@ -36,9 +38,10 @@ void ARelicApplyManager::ApplyRelicById(TArray<TPair<int32, bool>> &RelicIDs)
         case 1119: Relic1119(); break;
         case 1120: Relic1120(); break;
         case 1121: Relic1121(); break;
-        case 1122: Relic1122(); break;
+        case 1122: Relic1122(RelicIDs); break;
         case 1123: Relic1123(); break;
         case 1124: Relic1124(); break;
+        case 1125: Relic1125(); break;
         default:   break;
         }
         
@@ -281,9 +284,18 @@ void ARelicApplyManager::Relic1121()
     GetWorld()->SpawnActor<AActor>(MoonBook, SpawnLocation, FRotator::ZeroRotator);
 }
 
-void ARelicApplyManager::Relic1122()
+void ARelicApplyManager::Relic1122(TArray<TPair<int32,bool>> OwnRelicCount)
 {
-    RelicStatUp(100, ERelicStatType::critical);
+    int32 RelicCount = 0;
+    for (TPair<int32,bool> Relic : OwnRelicCount)
+    {
+        if (Relic.Value == true)
+        {
+            RelicCount++;
+        }
+    }
+    RelicStatUp(10 * (RelicCount + 1),ERelicStatType::MaxHP);
+    RelicStatUp(1 * (RelicCount + 1),ERelicStatType::AmmoDamage);
 }
 
 void ARelicApplyManager::Relic1123()
@@ -326,12 +338,75 @@ void ARelicApplyManager::Relic1124()
 
 void ARelicApplyManager::Relic1125()
 {
+    AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
     
+    if (!Player) return;
+    
+    Player->bIsOwnRelic1125 = true;
+    UE_LOG(LogTemp, Warning, TEXT("렐릭 소유 여부: %s"), Player->bIsOwnRelic1125 ? TEXT("true") : TEXT("false"));
 }
 
-bool ARelicApplyManager::Revive()
+void ARelicApplyManager::Revive()
 {
-   return false;
+    AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+    
+    if (!Player) return;
+    
+        if (Player->bIsOwnRelic1125)
+        {
+            Player->AddCurrentHp((Player->GetMapHp() / 10));
+			
+            FVector PlayerLocation = Player->GetActorLocation();
+			
+            float Radius = 1300.f;
+			
+            TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+            ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+			
+            TArray<AActor*> IgnoreActors;
+            IgnoreActors.Add(Player);
+			
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                Diary,
+                PlayerLocation,
+                FRotator::ZeroRotator,
+                FVector(2.f),
+                true,
+                true,
+                ENCPoolMethod::AutoRelease,
+                true
+            );
+			
+            TArray<AActor*> OverlappedActors;
+			
+            UKismetSystemLibrary::SphereOverlapActors(
+                GetWorld(),
+                PlayerLocation,
+                Radius,
+                ObjectTypes,
+                AActor::StaticClass(),
+                IgnoreActors,
+                OverlappedActors
+                );
+			
+            for (AActor* Actor : OverlappedActors)
+            {
+                AMonsterBase* Monster = Cast<AMonsterBase>(Actor);
+		
+                if (!Monster) continue;
+		
+                UGameplayStatics::ApplyDamage(
+                    Monster,
+                    500.f,
+                    Player->GetController(),
+                    Player,
+                    nullptr
+                );
+            }
+            Player->bIsOwnRelic1125 = false;
+        }
+    
 }
 
 

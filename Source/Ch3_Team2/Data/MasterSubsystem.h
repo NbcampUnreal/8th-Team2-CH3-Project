@@ -26,6 +26,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEliteMonsterKills);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBossMonsterKills);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerDeath);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRelicInPossession);
+
 UCLASS()
 class CH3_TEAM2_API UMasterSubsystem : public UGameInstanceSubsystem
 {
@@ -52,6 +56,12 @@ public:
 	
 	UPROPERTY()
 	FOnShowStatisticsUI OnShowStatisticsUI;
+	
+	UPROPERTY()
+	FOnPlayerDeath OnPlayerDeath;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
+	FOnRelicInPossession OnRelicInPossession;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnEliteMonsterKills OnEliteMonsterKills;

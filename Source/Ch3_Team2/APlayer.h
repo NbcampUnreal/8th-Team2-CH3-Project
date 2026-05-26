@@ -218,4 +218,6 @@ public:
 	const FRotator MeshPistolRotaiton = FRotator(0.0f,-90.0f,0.0f);
 	const FRotator WeaponPistolRotation = FRotator(-20.0f,-28.0f,-5.0f);
 	const FRotator MeshRifleRotaiton = FRotator(0.0f,-12.5f,0.0f);
+	
+	bool bIsOwnRelic1125 = false;
 };
