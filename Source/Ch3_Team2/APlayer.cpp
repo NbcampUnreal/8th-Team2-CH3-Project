@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "InputActionValue.h"
 #include "Data/MasterSubsystem.h"
+#include "Data/SaveSubsystem.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Prop/HealTotem.h"
@@ -44,6 +45,17 @@ void AAPlayer::BeginPlay()
 	Super::BeginPlay();
 	PController = Cast<APlayerController>(GetController());
 	LoadData(CurrentLevel,CurrentSkill,CurrentWeapon);
+	
+	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
+	if (SaveSubsystem && EquippedGun)
+	{
+		EquippedGun->LoadData(
+			SaveSubsystem->GetGripLevel(),
+			SaveSubsystem->GetScopeLevel(),
+			SaveSubsystem->GetMagazineLevel(),
+			SaveSubsystem->GetBulletLevel()
+		);
+	}
 }
 
 void AAPlayer::SwitchSkill(int32 Index)
@@ -71,7 +83,6 @@ void AAPlayer::SwitchSkill(int32 Index)
 
 void AAPlayer::SwitchWeapon(int32 Index)
 {
-	
 	if (EquippedGun)
 	{
 		EquippedGun->SetActorHiddenInGame(true);
@@ -424,6 +435,7 @@ void AAPlayer::LevelUpStat()
 	AddPlayerSpeed(0);
 	if (UMasterSubsystem* MasterSubsystem = GetGameInstance()->GetSubsystem<UMasterSubsystem>())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("OnPlayerLevelUp"));
 		MasterSubsystem->OnPlayerLevelUp.Broadcast();
 	}
 }

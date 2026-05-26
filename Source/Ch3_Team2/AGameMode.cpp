@@ -16,11 +16,6 @@ AAGameMode::AAGameMode()
 void AAGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AAGameMode::LoadAllData);
-}
-
-void AAGameMode::LoadAllData()
-{
 	USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>();
 	if (!IsValid(SaveSubsystem))
 	{
@@ -36,7 +31,7 @@ void AAGameMode::LoadAllData()
 	{
 		return;
 	}
-	AGunBase* Gun = Player->EquippedGun;
+	AGunBase* Gun = Cast<AGunBase>(UGameplayStatics::GetActorOfClass(GetWorld(), AGunBase::StaticClass()));
 	if (!IsValid(Gun))
 	{
 		return;
