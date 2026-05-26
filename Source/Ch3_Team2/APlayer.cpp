@@ -400,8 +400,11 @@ void AAPlayer::AddExp(int32 Add_Exp)
 	while (Exp >= LevelUpExp)
 	{
 		Exp -= LevelUpExp;
-		LevelUpStat();
-		LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
+		if (CurrentLevel <MaxLevel)
+		{
+			LevelUpStat();
+			LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
+		}
 	}
 }
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)
