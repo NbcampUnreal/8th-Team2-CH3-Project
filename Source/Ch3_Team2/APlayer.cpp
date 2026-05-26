@@ -102,55 +102,42 @@ void AAPlayer::SwitchWeapon(int32 Index)
 	}
 	if (TargetGun)
 	{
-		
-		
 		EquippedGun = TargetGun;
-        
 		EquippedGun->SetActorHiddenInGame(false);
 		EquippedGun->SetActorEnableCollision(true);
         EquippedGun->SetOwner(this);
-		EquippedGun->AttachToComponent(
-			GetMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			TEXT("GripPoint")
-		);
 		EquippedGun->SetActorRelativeLocation(FVector::ZeroVector);
 		EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
 		
 		if (Index == 0)
 		{
+			EquippedGun->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("GripPoint_1"));
 			GetMesh()->SetAnimInstanceClass(PistolABPClass);
-			//GetMesh()->SetRelativeRotation(MeshPistolRotaiton);
-			//GetMesh()->SetRelativeLocation(MeshPistolLocation);
-			//EquippedGun->SetActorRelativeRotation(WeaponPistolRotation);
+			GetMesh()->SetRelativeLocation(MeshPistolLocation);
 			ShootMontage = PistolShootMontage;
-
 
 		}
 		else
 		{
+			EquippedGun->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("GripPoint"));
 			GetMesh()->SetAnimInstanceClass(RifleABPClass);
-			//GetMesh()->SetRelativeRotation(MeshRifleRotaiton);
-			//GetMesh()->SetRelativeLocation(MeshRifleLocaiton);
-			//EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+			GetMesh()->SetRelativeLocation(MeshRifleLocaiton);
 			ShootMontage = RifleShootMontage;
 
 		}
-		
 		EquippedGun->PartsUpdate();
-		
-		UE_LOG(LogTemp, Warning, TEXT("TargetGun : %s"),
-	TargetGun ? *TargetGun->GetName() : TEXT("NULL"));
-
-		UE_LOG(LogTemp, Warning, TEXT("Mesh : %s"),
-			GetMesh() ? *GetMesh()->GetName() : TEXT("NULL"));
 		CurrentWeapon = Index;
 	}
 	else
 	{
 		EquippedGun = nullptr; 
 		CurrentWeapon = -1; 
-		UE_LOG(LogTemp, Warning, TEXT("인덱스 %d 가 잘못되었습니다.."), Index);
 	}
 }
 void AAPlayer::Move(const FInputActionValue& Value)
@@ -410,11 +397,11 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
-	while (Exp >= LevelUpExp)
+	while (Exp >= LevelUpExp && CurrentLevel < MaxLevel)
 	{
 		Exp -= LevelUpExp;
-		LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 		LevelUpStat();
+		LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 	}
 }
 void AAPlayer::TotalDamageUpGrade(float AddRelicBonus, float TotalBonus,float Critical)

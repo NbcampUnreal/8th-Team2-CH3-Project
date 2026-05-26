@@ -69,7 +69,6 @@ public:
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
-	// 에디터 디테일 패널에서 몽타주 에셋을 넣을 수 있는 슬롯을 만듭니다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* ReloadMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -152,7 +151,6 @@ public:
 	int32 GetExp() const {return Exp;}
 	int32 GetCurrentLevel() const {return CurrentLevel;}
 	
-	// OverDrive용으로 사용됩니다.
 	float GetTotalSpeed() const {return MoveSpeed;}
 
 	FORCEINLINE AHealTotem* GetCurrentStructure() const 
@@ -175,9 +173,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RecoilControll")
 	AGunBase* EquippedGun;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	TArray<TSubclassOf<AGunBase>> WeaponBlueprintClasses;
-	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SwitchWeapon(int32 Index);
 	
@@ -196,7 +191,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|Upgrade")
 	void UpgradeWeaponParts(EPartsName PartsType);
 
-	// UI에서 현재 파츠 정보를 화면에 띄우기 위해 데이터를 가져오는 함수
 	UFUNCTION(BlueprintCallable, Category = "Player|Upgrade")
 	FGunParts GetCurrentWeaponPartsData(EPartsName PartsType);
 
@@ -219,10 +213,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	const FVector MeshPistolLocation = FVector(-10.0f,0.0,-165.0f);
-	const FVector MeshRifleLocaiton = FVector(-15.0f,15.0,-150.0f);
-	const FRotator MeshPistolRotaiton = FRotator(0.0f,-90.0f,0.0f);
-	const FRotator WeaponPistolRotation = FRotator(-20.0f,-28.0f,-5.0f);
-	const FRotator MeshRifleRotaiton = FRotator(0.0f,-12.5f,0.0f);
+	const FVector MeshRifleLocaiton = FVector(-5.0f,15.0,-150.0f);
 	
 	bool bHasReviveRelic = false;
 };
