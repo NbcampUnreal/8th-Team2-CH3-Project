@@ -19,4 +19,9 @@ public:
 	float KnockbackStrength = 1500.0f;// 밀려나는 힘 (수치 조절 필요)
 	
 	virtual void ActiveSkill()override;
+	
+	void BattleIn(const FOverlapResult& HitResult);
+	
+private:
+	float ExplosionDamage = 10.f;
 };

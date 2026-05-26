@@ -2,11 +2,17 @@
 
 
 #include "SBW/SkillRadialExplosion.h"
+#include "Battle/BattleSubsystem.h"
 #include "Engine/OverlapResult.h"
 #include "public/MonsterBase.h"
 
 void USkillRadialExplosion::ActiveSkill()
 {
+	if (CurrentSkillCoolTime > 0.0f)
+	{
+		return;
+	}
+	
 	AActor* Owner = GetOwner();
 	if (Owner && GetWorld())
 	{
@@ -50,10 +56,29 @@ void USkillRadialExplosion::ActiveSkill()
 					TargetCharacter->LaunchCharacter(LaunchDirection * KnockbackStrength, true, true);
 					
 					// 데미지 계산 여기서 호출하면 됩니다.
+					BattleIn(Result);
 				}
 			}
 		}
 	}
 	Super::ActiveSkill();
+}
+
+void USkillRadialExplosion::BattleIn(const FOverlapResult& HitResult)
+{
+	AMonsterBase* Monster = Cast<AMonsterBase>(HitResult.GetActor());
+	UBattleSubsystem* BattleSubsystem =GetOwner()->GetGameInstance()->GetSubsystem<UBattleSubsystem>();
 	
+	if (!Monster || !BattleSubsystem)
+	{
+		return;
+	}
+	
+	BattleSubsystem->ExecuteDamageCalculation(
+		GetOwner(), 
+		Monster, 
+		ExplosionDamage, 
+		false, 
+		1.f
+	);
 }

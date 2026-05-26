@@ -75,7 +75,7 @@ void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 	}
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
-	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
 	
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{

@@ -78,23 +78,21 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 		ECC_Visibility, 
 		Params
 	);
-	//FLinearColor LColor =bHit ? FLinearColor::Green : FLinearColor::Red; 
 	
-	//DrawDebugLine(
-	//	GetWorld(),
-	//	Location,
-	//	End,
-	//	LColor.ToFColor(true),
-	//	false,
-	//	2.0f,
-	//	0,
-	//	0.1f
-	//);
+	if (TrailEffect)
+	{
+		UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			TrailEffect,
+			FirePoint->GetComponentLocation()
+		);
+		FVector BeamEnd = bHit ? HitResult.ImpactPoint : End;
+		NiagaraComp->SetNiagaraVariableVec3("User.BeamEnd", BeamEnd);
+	}
 	
 	if (bHit)
 	{
 		BattleIn(HitResult);
-		//DrawDebugSphere(GetWorld(),HitResult.ImpactPoint,10.f,5,FColor::Green,false,3.f);
 		
 		if (HitEffect)
 		{
@@ -104,17 +102,6 @@ void AGunBase::FireGun(FVector Location, FVector Direction)
 				HitResult.ImpactPoint,
 				HitResult.ImpactNormal.Rotation()
 			);
-		}
-		
-		if (TrailEffect)
-		{
-			UNiagaraComponent* NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				TrailEffect,
-				FirePoint->GetComponentLocation()
-			);
-			
-			NiagaraComp->SetNiagaraVariableVec3("User.BeamEnd", HitResult.ImpactPoint);
 		}
 	}
 }
