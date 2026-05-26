@@ -56,11 +56,11 @@ public:
 	FOnShowStatisticsUI OnShowStatisticsUI;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
-	FOnRelic1125InPossession OnRelicInPossession;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnEliteMonsterKills OnEliteMonsterKills;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
 	FOnBossMonsterKills OnBossMonsterKills;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Broadcast")
+	FOnRelic1125InPossession OnRelicInPossession;
 };

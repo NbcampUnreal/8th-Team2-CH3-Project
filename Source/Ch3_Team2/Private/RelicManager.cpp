@@ -1,10 +1,4 @@
 #include "RelicManager.h"
-
-#include "MonsterBase.h"
-#include "MonsterProjectile.h"
-#include "MonsterStatComponent.h"
-#include "Ch3_Team2/APlayer.h"
-#include "Kismet/GameplayStatics.h"
 #include "Ch3_Team2/Data/MasterSubsystem.h"
 
 ARelicManager::ARelicManager()
@@ -24,10 +18,8 @@ void ARelicManager::BeginPlay()
 
 void ARelicManager::LoadData(TArray<int32> RelicIDs)
 {
-    // [방어코드 개선] 꼼꼼하게 검사하고, 문제 발생 시 정확하게 로그를 출력한 뒤 안전하게 리턴합니다.
     if (!ApplyManager || !IsValid(RelicDataTable)) 
     {
-       UE_LOG(LogTemp, Error, TEXT("LoadData 실패: ApplyManager가 아직 생성되지 않았거나 RelicDataTable이 에디터에 할당되지 않았습니다!"));
        return;
     }
     
@@ -95,15 +87,12 @@ void ARelicManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ARelicManager::AddOwnedRelic(const FRelicData& NewRelic)
 {
     if (NewRelic.RelicId == 0) return;
-    
-    // [방어코드 추가] 에셋 획득 시점에도 ApplyManager가 안전한지 검사합니다.
+   
     if (!ApplyManager)
     {
-        UE_LOG(LogTemp, Error, TEXT("AddOwnedRelic 실패: ApplyManager가 유효하지 않습니다!"));
         return;
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("Relic Selected : %s"), *NewRelic.RelicName.ToString());
     
     OwnedRelicIDs.Add({NewRelic.RelicId, false});
     RandomRelicOption.Empty();

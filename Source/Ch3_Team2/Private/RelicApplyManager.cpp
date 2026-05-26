@@ -2,7 +2,6 @@
 
 #include "RelicApplyManager.h"
 
-#include "KismetCompiler.h"
 #include "Ch3_Team2/APlayer.h"
 #include "Kismet/GameplayStatics.h"
 #include "RelicData.h"
@@ -11,13 +10,10 @@
 #include "MonsterBase.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Components/WidgetComponent.h"
 #include "Algo/Count.h"
-#include "PhysicsEngine/PhysicsAsset.h"
 
 void ARelicApplyManager::ApplyRelicById(TArray<TPair<int32, bool>> &RelicIDs)
 {
-    // 개수가 0일 때 early return
     if (RelicIDs.Num() == 0) return;
     
     for (TPair<int32, bool>& RelicID : RelicIDs)
@@ -102,7 +98,7 @@ void ARelicApplyManager::FindRelicData(int32 RelicID) const
 void ARelicApplyManager::RelicStatUp(float Value, ERelicStatType StatType) const
 {
     AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-    if (!Player) return; // 플레이어 널 체크 추가로 안정성 확보
+    if (!Player) return; 
 
     switch (StatType)
     {
@@ -139,7 +135,6 @@ void ARelicApplyManager::Relic1027()
 
 void ARelicApplyManager::Relic1117()
 {
-    // 안전한 약참조(Weak pointer) 캡처 사용
     TWeakObjectPtr<ARelicApplyManager> WeakThis(this);
 
     GetWorld()->GetTimerManager().SetTimer(TimerHandle1117, [WeakThis]()
@@ -231,8 +226,7 @@ void ARelicApplyManager::Relic1120()
         Center.Z -= 60.f;
           
         float SpawnRadius = 1500.f;
-
-        // 루프 밖으로 배열 세팅 분리 (메모리 낭비 방지)
+        
         TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
         ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
         TArray<AActor*> IgnoreActors;
@@ -245,7 +239,6 @@ void ARelicApplyManager::Relic1120()
           
             FHitResult HitResult;
             FVector Start = TargetLocation + FVector(0.f, 0.f, 2000.f);
-            // 버그 수정: 마이너스를 더해 아래로 발사되게 처리 (- 5000 방향 수정)
             FVector End = TargetLocation - FVector(0.f, 0.f, 5000.f); 
             FCollisionQueryParams CollisionParams;
             CollisionParams.AddIgnoredActor(Player);
@@ -336,8 +329,7 @@ void ARelicApplyManager::Relic1125()
     
     if (!Player) return;
     
-    Player->bIsOwnRelic1125 = true;
-    UE_LOG(LogTemp, Warning, TEXT("렐릭 소유 여부: %s"), Player->bIsOwnRelic1125 ? TEXT("true") : TEXT("false"));
+    Player->bHasReviveRelic = true;
 }
 
 void ARelicApplyManager::Revive()
@@ -346,7 +338,7 @@ void ARelicApplyManager::Revive()
     
     if (!Player) return;
     
-        if (Player->bIsOwnRelic1125)
+        if (Player->bHasReviveRelic)
         {
             Player->AddCurrentHp((Player->GetMapHp() / 10));
 			
@@ -398,7 +390,7 @@ void ARelicApplyManager::Revive()
                     nullptr
                 );
             }
-            Player->bIsOwnRelic1125 = false;
+            Player->bHasReviveRelic = false;
         }
     
 }
