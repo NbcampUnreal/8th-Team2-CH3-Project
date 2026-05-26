@@ -102,6 +102,8 @@ void AAPlayer::SwitchWeapon(int32 Index)
 	}
 	if (TargetGun)
 	{
+		
+		
 		EquippedGun = TargetGun;
         
 		EquippedGun->SetActorHiddenInGame(false);
@@ -115,7 +117,28 @@ void AAPlayer::SwitchWeapon(int32 Index)
 		EquippedGun->SetActorRelativeLocation(FVector::ZeroVector);
 		EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
 		
+		if (Index == 0)
+		{
+			GetMesh()->SetAnimInstanceClass(PistolABPClass);
+			GetMesh()->SetRelativeRotation(MeshPistolRotaiton);
+			GetMesh()->SetRelativeLocation(MeshPistolLocation);
+			EquippedGun->SetActorRelativeRotation(WeaponPistolRotation);
+		}
+		else
+		{
+			GetMesh()->SetAnimInstanceClass(RifleABPClass);
+			GetMesh()->SetRelativeRotation(MeshRifleRotaiton);
+			GetMesh()->SetRelativeLocation(MeshRifleLocaiton);
+			EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+		}
+		
 		EquippedGun->PartsUpdate();
+		
+		UE_LOG(LogTemp, Warning, TEXT("TargetGun : %s"),
+	TargetGun ? *TargetGun->GetName() : TEXT("NULL"));
+
+		UE_LOG(LogTemp, Warning, TEXT("Mesh : %s"),
+			GetMesh() ? *GetMesh()->GetName() : TEXT("NULL"));
 		CurrentWeapon = Index;
 	}
 	else
