@@ -397,7 +397,7 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
-	while (Exp >= LevelUpExp)
+	while (Exp >= LevelUpExp && CurrentLevel < MaxLevel)
 	{
 		Exp -= LevelUpExp;
 		if (CurrentLevel <MaxLevel)
