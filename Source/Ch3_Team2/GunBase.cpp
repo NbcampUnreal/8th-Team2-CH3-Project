@@ -1,4 +1,5 @@
 #include "GunBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Data/MasterSubsystem.h"
 #include "Battle/BattleSubsystem.h"
 #include "public/MonsterBase.h"
@@ -31,9 +32,10 @@ bool AGunBase::CanShoot()
 	CanFire = false;
 
 	bTriggerReleased = false;
-	
+	float TimeDilation = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+
 	float FireInterval =
-		1.0f / FMath::Max(RoundsPerSecond, 0.1f);
+		1.0f / FMath::Max(RoundsPerSecond/TimeDilation, 0.001f);
 
 	GetWorld()->GetTimerManager().SetTimer(
 		TimerFireDelay,
