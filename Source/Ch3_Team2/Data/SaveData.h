@@ -13,8 +13,15 @@ public:
 	UPROPERTY(SaveGame) int32 SaveVersion = 3;
 	
 	UPROPERTY(SaveGame) TArray<int32> RelicIDs;
-	UPROPERTY(SaveGame) int32 PlayerLevel = 0, PlayerSkill = 0, PlayerWeapon = 0;
-	UPROPERTY(SaveGame) int32 GripLevel = 0, ScopeLevel = 0, MagazineLevel = 0, BulletLevel = 0;
+	
+	UPROPERTY(SaveGame) int32 PlayerLevel = 0; 
+	UPROPERTY(SaveGame) int32 PlayerSkill = 0;
+	UPROPERTY(SaveGame) int32 PlayerWeapon = 0;
+	
+	UPROPERTY(SaveGame) int32 GripLevel = 0;
+	UPROPERTY(SaveGame) int32 ScopeLevel = 0;
+	UPROPERTY(SaveGame) int32 MagazineLevel = 0;
+	UPROPERTY(SaveGame) int32 BulletLevel = 0;
 	
 	UPROPERTY(SaveGame) TArray<float> StageClearTime = {0.f, 0.f, 0.f};
 	

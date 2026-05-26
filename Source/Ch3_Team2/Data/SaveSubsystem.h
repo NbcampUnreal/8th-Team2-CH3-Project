@@ -71,7 +71,11 @@ public:
 
 	// --- Stage Clear Time ---
 	UFUNCTION(BlueprintPure)
-	TArray<float> GetStageClearTime() const { return CurrentSave ? CurrentSave->StageClearTime : TArray<float>(); }
+	float GetStageClearTime() const { 
+		return	CurrentSave->StageClearTime[0] + 
+				CurrentSave->StageClearTime[1] + 
+				CurrentSave->StageClearTime[2]; 
+	}
 
 	UFUNCTION(BlueprintPure)
 	float GetStageClearTimeAt(int32 StageIndex) const

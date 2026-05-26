@@ -1,5 +1,8 @@
 #include "Data/MyCheatManager.h"
+
+#include "APlayer.h"
 #include "LevelFlowSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 
 void UMyCheatManager::Next()
 {
@@ -26,4 +29,10 @@ void UMyCheatManager::Relic()
 		PC->FindFunction(FName("CallRelicCheat")),
 		nullptr
 	);
+}
+
+void UMyCheatManager::LevelUp()
+{
+	AAPlayer* Player = Cast<AAPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	Player->AddExp(100000);
 }
