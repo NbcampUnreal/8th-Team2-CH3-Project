@@ -15,4 +15,7 @@ public:
 	
 	UFUNCTION(exec)
 	void Relic();
+	
+	UFUNCTION(exec)
+	void LevelUp();
 };
