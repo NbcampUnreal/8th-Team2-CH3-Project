@@ -70,7 +70,8 @@ protected:
 	
 	FTimerHandle SpawnTimerHandle;
 	
-
+	UFUNCTION()
+	void OnMonsterDiedInstant(AMonsterBase* DeadMonster);
 
 	void SpawnBossMonster();
 	UPROPERTY(EditAnywhere, Category = "Spawner|Boss")

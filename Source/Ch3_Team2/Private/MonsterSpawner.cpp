@@ -3,6 +3,7 @@
 
 #include "MonsterSpawner.h"
 #include "MonsterBase.h"
+#include "MonsterStatComponent.h"
 #include "PoolComponent.h"
 #include "Kismet/GameplayStatics.h"  
 #include "Components/CapsuleComponent.h"
@@ -69,6 +70,8 @@ AMonsterBase* AMonsterSpawner::SpawnMonster(TSubclassOf<AMonsterBase> MonsterCla
 		//몬스터 죽었을 때 카운트 감소용
 		Monster->GetOnReadyToReturn().AddUniqueDynamic(this, &AMonsterSpawner::OnMonsterDespawned);
 		CurrentActiveMonsters++;
+		
+		Monster->OnMonsterDiedInstant.AddUniqueDynamic(this, &AMonsterSpawner::OnMonsterDiedInstant);
 		
 		return Monster;
 	}
@@ -260,4 +263,25 @@ void AMonsterSpawner::GetMonsterSpawnTransform(FMonsterSpawnConfig* SelectedConf
     Transform = FTransform(FRotator::ZeroRotator, FinalSpawnLocation, FVector::OneVector);
 }
 
+void AMonsterSpawner::OnMonsterDiedInstant(AMonsterBase* DeadMonster)
+{
+	if (!DeadMonster) return;
 
+	if (DeadMonster->GetStatComponent()->GetMonsterTag()==EMonsterGrade::Boss)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
+		TArray<AActor*> OutMonsters;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMonsterBase::StaticClass(), OutMonsters);
+
+		for (AActor* Actor : OutMonsters)
+		{
+			if (AMonsterBase* RemainingMonster = Cast<AMonsterBase>(Actor))
+			{
+				if (RemainingMonster != DeadMonster && !RemainingMonster->GetOnReadyToReturn().IsBound())
+				{
+					RemainingMonster->ForceDeath();
+				}
+			}
+		}
+	}
+}

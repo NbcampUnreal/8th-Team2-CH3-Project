@@ -73,6 +73,11 @@ void AMonsterBase::HandleDeath(AController* InInstigator,AActor* DeathActor)
 	{
 		return;
 	}
+	
+	if (OnMonsterDiedInstant.IsBound())
+	{
+		OnMonsterDiedInstant.Broadcast(this);
+	}
 	//충돌 및 움직임 중단
 	SetActorEnableCollision(false);
 	GetCharacterMovement()->DisableMovement();
@@ -246,3 +251,4 @@ int32 AMonsterBase::GetCurrentLevelIndex() const
 	}
 	return -1; // 서브시스템을 찾지 못했을 때의 예외 처리용 Fallback 값
 }
+

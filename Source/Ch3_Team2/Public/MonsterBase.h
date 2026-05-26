@@ -8,7 +8,7 @@
 #include "Poolable.h"
 #include "MonsterBase.generated.h"
 
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMonsterDiedInstantSignature, AMonsterBase*, DeadMonster);
 UCLASS()
 class CH3_TEAM2_API AMonsterBase : public ACharacter,public IPoolable
 {
@@ -37,6 +37,11 @@ public:
 	void BossAfterDeath();
 	
 	void RotateToPlayerTarget();
+	
+	UPROPERTY(BlueprintAssignable, Category = "Monster|Events")
+	FOnMonsterDiedInstantSignature OnMonsterDiedInstant;
+	
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UMonsterStatComponent* StatComp;
