@@ -36,9 +36,7 @@ void AAGameMode::BeginPlay()
 	{
 		return;
 	}
-	
-	// TODO: 순서 보장하면서 값만 넘기기
 	Relic->LoadData(SaveSubsystem->GetRelicIDs());
 	Player->LoadData(SaveSubsystem->GetPlayerLevel(), SaveSubsystem->GetPlayerSkill(), SaveSubsystem->GetPlayerWeapon());
-	//Gun->LoadData(SaveSubsystem->GetGripLevel(), SaveSubsystem->GetScopeLevel(), SaveSubsystem->GetMagazineLevel(), SaveSubsystem->GetBulletLevel());
+	Gun->LoadData(SaveSubsystem->GetGripLevel(), SaveSubsystem->GetScopeLevel(), SaveSubsystem->GetMagazineLevel(), SaveSubsystem->GetBulletLevel());
 }
