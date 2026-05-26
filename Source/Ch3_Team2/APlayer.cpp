@@ -120,16 +120,21 @@ void AAPlayer::SwitchWeapon(int32 Index)
 		if (Index == 0)
 		{
 			GetMesh()->SetAnimInstanceClass(PistolABPClass);
-			GetMesh()->SetRelativeRotation(MeshPistolRotaiton);
-			GetMesh()->SetRelativeLocation(MeshPistolLocation);
-			EquippedGun->SetActorRelativeRotation(WeaponPistolRotation);
+			//GetMesh()->SetRelativeRotation(MeshPistolRotaiton);
+			//GetMesh()->SetRelativeLocation(MeshPistolLocation);
+			//EquippedGun->SetActorRelativeRotation(WeaponPistolRotation);
+			ShootMontage = PistolShootMontage;
+
+
 		}
 		else
 		{
 			GetMesh()->SetAnimInstanceClass(RifleABPClass);
-			GetMesh()->SetRelativeRotation(MeshRifleRotaiton);
-			GetMesh()->SetRelativeLocation(MeshRifleLocaiton);
-			EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+			//GetMesh()->SetRelativeRotation(MeshRifleRotaiton);
+			//GetMesh()->SetRelativeLocation(MeshRifleLocaiton);
+			//EquippedGun->SetActorRelativeRotation(FRotator::ZeroRotator);
+			ShootMontage = RifleShootMontage;
+
 		}
 		
 		EquippedGun->PartsUpdate();
@@ -405,9 +410,10 @@ void AAPlayer::AddPlayerSpeed(float Add_Speed)
 void AAPlayer::AddExp(int32 Add_Exp)
 {
 	Exp += Add_Exp;
-	if (Exp >= LevelUpExp &&CurrentLevel < MaxLevel)
+	while (Exp >= LevelUpExp)
 	{
 		Exp -= LevelUpExp;
+		LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 		LevelUpStat();
 	}
 }
@@ -423,7 +429,6 @@ void AAPlayer::LevelUpStat()
 	AddMaxHp(0);	
 	CurrentHp = MaxHp;
 	++CurrentLevel;
-	LevelUpExp =FMath::RoundToInt32(BaseExp * FMath::Pow(BaseUpExp, CurrentLevel));
 	AddPlayerSpeed(0);
 }
 void AAPlayer::DecreaseSkillCoolTime(float SkillCoolTime)
