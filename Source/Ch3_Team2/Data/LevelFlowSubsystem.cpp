@@ -48,7 +48,7 @@ void ULevelFlowSubsystem::TravelToLevelByIndex(int32 LevelIndex)
     PrevLevelIndex = CurrentLevelIndex;
     CurrentLevelIndex = LevelIndex;
     
-    PreloadNextLevel();  // ← 여기 추가, 다음 레벨 미리 로드 시작
+    PreloadNextLevel();
 
     const FName LevelName = FName(*FPackageName::GetShortName(LevelRef.GetLongPackageName()));
     UGameplayStatics::OpenLevel(this, LevelName);

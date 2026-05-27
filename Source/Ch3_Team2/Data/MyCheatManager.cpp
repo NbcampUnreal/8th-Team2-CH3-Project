@@ -16,8 +16,6 @@ void UMyCheatManager::Next()
 	if (!LevelFlow) return;
 	
 	LevelFlow->TravelToNextLevel();
-	// 플레이어 레벨업
-	// player addexp
 }
 
 void UMyCheatManager::Relic()
